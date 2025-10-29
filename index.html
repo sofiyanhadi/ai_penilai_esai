@@ -6,782 +6,840 @@
     <title>Aplikasi Ujian Esai AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Menggunakan jsPDF untuk membuat PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Menggunakan html2canvas untuk mengonversi HTML ke gambar (untuk PDF) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
         }
         .prose-custom { max-width: none; }
         .prose-custom p { margin-top: 0.5em; margin-bottom: 0.5em; }
         .prose-custom h3 { margin-bottom: 0.5em; }
+        /* Scrollbar kustom */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #555; }
-        .modal-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 50;
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        /* Style untuk penanda loading */
+        .loading-dots:after {
+            content: ' .';
+            animation: dots 1s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
+            40% { color: black; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
+            60% { text-shadow: .25em 0 0 black, .5em 0 0 rgba(0,0,0,0); }
+            80%, 100% { text-shadow: .25em 0 0 black, .5em 0 0 black; }
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen flex flex-col p-4">
 
-<div id="app" class="min-h-screen flex flex-col items-center p-4 sm:p-6">
-    
-    <!-- Header Aplikasi -->
-    <header class="w-full max-w-4xl flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-md">
-        <h1 class="text-2xl font-bold text-gray-800">Ujian Esai AI</h1>
-        <div class="flex items-center space-x-3">
-            <span id="spreadsheetIdStatus" class="text-sm font-medium px-3 py-1 rounded-full bg-red-100 text-red-700 transition duration-300">
-                ID Sheet: Belum diatur!
-            </span>
-            <button id="teacherSettingsBtn" class="p-2 text-gray-500 hover:text-blue-600 transition duration-150 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" title="Pengaturan Guru">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.062.37.316.666.62.813l.636.318c.54.27.76.91.51 1.446l-.382.787c-.23.473-.605.835-1.036 1.097l-.443.218c-.35.162-.56.51-.56.908v.75c0 .398.21.746.56.908l.443.218c.43.262.805.624 1.036 1.097l.382.787c.25.536.03 1.176-.51 1.446l-.636.318c-.304.147-.558.443-.62.813l-.213 1.281c-.09.542-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.37-.316-.666-.62-.813l-.636-.318c-.54-.27-.76-.91-.51-1.446l.382-.787c.23-.473.605-.835 1.036-1.097l.443-.218c.35-.162.56-.51.56-.908v-.75c0-.398-.21-.746-.56-.908l-.443-.218c-.43-.262-.805-.624-1.036-1.097l-.382-.787c-.25-.536-.03-1.176.51-1.446l.636-.318c.304-.147.558-.443.62-.813l.213-1.281z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+    <!-- Kontainer Utama Aplikasi -->
+    <main class="max-w-4xl w-full mx-auto bg-white shadow-xl rounded-xl p-6 md:p-10 flex-grow">
+        
+        <!-- Header -->
+        <header class="mb-6 border-b pb-4 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-800">Ujian Esai Otomatis</h1>
+            <button id="teacher-settings-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 transform hover:scale-105">
+                Pengaturan Guru
+            </button>
+        </header>
+
+        <!-- Area Soal -->
+        <section id="question-area" class="mb-8 p-4 bg-indigo-50 border border-indigo-200 rounded-lg shadow-inner">
+            <h2 class="text-xl font-semibold mb-2 text-indigo-800">Soal Ujian</h2>
+            <div id="quiz-question" class="prose-custom max-w-none text-gray-700 min-h-[50px]">
+                <!-- Soal akan dimuat di sini -->
+                <p>Silakan tunggu soal dimuat, atau tekan tombol **Pengaturan Guru** untuk membuat soal baru.</p>
+            </div>
+        </section>
+
+        <!-- Area Jawaban Siswa -->
+        <section class="mb-8">
+            <h2 class="text-xl font-semibold mb-3 text-gray-800">Jawaban Anda</h2>
+            
+            <!-- Toolbar Karakter Khusus -->
+            <div id="writing-toolbar" class="flex flex-wrap gap-2 mb-3 p-3 bg-gray-100 rounded-lg border">
+                <span class="text-sm font-medium text-gray-600 mr-2">Karakter Khusus:</span>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="α">α</button>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="β">β</button>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="γ">γ</button>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="δ">δ</button>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="θ">θ</button>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="π">π</button>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="Σ">Σ</button>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="Δ">Δ</button>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="ε">ε</button>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="√">√</button>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="∞">∞</button>
+                <button class="px-2 py-1 text-sm bg-white border rounded-md hover:bg-gray-200" data-char="∫">∫</button>
+            </div>
+
+            <textarea id="student-answer-input" rows="10" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 shadow-sm" placeholder="Tulis jawaban esai Anda di sini..."></textarea>
+        </section>
+
+        <!-- Tombol Aksi -->
+        <div class="flex flex-col md:flex-row gap-4 mb-8">
+            <button id="submit-answer-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 transform hover:scale-[1.02] disabled:opacity-50" disabled>
+                <span id="submit-text">Kirim Jawaban & Nilai</span>
+            </button>
+            <button id="retake-quiz-btn" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 transform hover:scale-[1.02] disabled:opacity-50" disabled>
+                Ulangi Ujian
             </button>
         </div>
-    </header>
 
-    <!-- Modal Pengaturan Guru (hidden by default) -->
-    <div id="settingsModal" class="modal-container hidden justify-center items-center">
-        <div id="settingsBackdrop" class="absolute w-full h-full"></div>
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl m-4 z-10 transform transition-all duration-300 scale-100">
-            <div class="flex justify-between items-center p-5 border-b border-gray-200">
-                <h2 class="text-xl font-semibold text-gray-800">Pengaturan Guru & Generator</h2>
-                <button id="closeSettingsBtn" class="text-gray-400 hover:text-gray-600 transition duration-150">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-
-            <!-- Konten Modal: 1. PIN Entry -->
-            <div id="pinEntry" class="p-6">
-                <h3 class="text-lg font-medium mb-4">Masukkan PIN Guru</h3>
-                <input type="password" id="pinInput" placeholder="PIN" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 mb-3">
-                <p id="pinMessage" class="text-sm h-5 mb-4"></p>
-                <button id="submitPinBtn" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-150 shadow-md">
-                    Masuk
-                </button>
-                <p class="text-xs text-gray-500 mt-2 text-center">PIN default: 1234</p>
-            </div>
+        <!-- Area Hasil & Penilaian -->
+        <section id="results-area" class="hidden mt-8 border-t pt-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Hasil Penilaian</h2>
             
-            <!-- Konten Modal: 2. Main Settings & Tabs (Hidden by PIN) -->
-            <div id="settingsContent" class="hidden p-6">
-                
+            <!-- Skor dan Status -->
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+                <div class="flex-1 p-5 bg-blue-100 border border-blue-300 rounded-xl shadow-md">
+                    <p class="text-sm font-medium text-blue-700">Skor Anda:</p>
+                    <p id="score-display" class="text-4xl font-extrabold text-blue-900 mt-1">--</p>
+                </div>
+                <div class="flex-1 p-5 bg-yellow-100 border border-yellow-300 rounded-xl shadow-md">
+                    <p class="text-sm font-medium text-yellow-700">Waktu Pengerjaan:</p>
+                    <p id="time-display" class="text-4xl font-extrabold text-yellow-900 mt-1">--</p>
+                </div>
+            </div>
+
+            <!-- Umpan Balik Detail dari AI -->
+            <div id="ai-feedback-container" class="mb-6 p-6 bg-white border border-gray-200 rounded-xl shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-700 mb-3 border-b pb-2">Umpan Balik Mendalam</h3>
+                <div id="ai-feedback" class="prose-custom max-w-none text-gray-600">
+                    <p>Umpan balik penilaian AI akan ditampilkan di sini.</p>
+                </div>
+            </div>
+
+            <!-- Tombol Download -->
+            <div class="text-right">
+                <button id="download-pdf-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 transform hover:scale-105">
+                    Download Hasil Ujian (PDF)
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Pengaturan Guru (ADMIN ONLY) -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 transition-opacity duration-300">
+        <!-- Backdrop for pin check -->
+        <div id="settings-backdrop" class="absolute inset-0"></div>
+
+        <!-- Konten Modal Utama -->
+        <div id="settings-modal-content-wrapper" class="bg-white rounded-xl shadow-2xl w-full max-w-3xl m-4 transition-transform duration-300 transform scale-95 opacity-0">
+            
+            <!-- Cek PIN Awal -->
+            <div id="pin-check-screen" class="p-6">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">Akses Pengaturan Guru</h2>
+                <p class="mb-4 text-gray-600">Masukkan PIN Admin untuk mengakses konfigurasi.</p>
+                <input type="password" id="pin-input" class="w-full p-3 mb-4 border-2 border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" maxlength="4" placeholder="PIN 4 Digit">
+                <div class="flex justify-end space-x-3">
+                    <button id="close-settings-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg transition duration-150">Batal</button>
+                    <button id="submit-pin-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 disabled:opacity-50" disabled>Masuk</button>
+                </div>
+            </div>
+
+            <!-- Konten Pengaturan Setelah Lolos PIN -->
+            <div id="settings-config-screen" class="hidden p-6">
+                <div class="flex justify-between items-center border-b pb-3 mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">Konfigurasi Aplikasi</h2>
+                    <button id="close-config-btn" class="text-gray-500 hover:text-gray-700 text-2xl font-semibold">&times;</button>
+                </div>
+
                 <!-- Navigasi Tab -->
-                <div class="flex border-b border-gray-200 mb-4">
-                    <button id="tabConfigBtn" data-tab="config" class="tab-button px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600 transition duration-150 focus:outline-none">
-                        Konfigurasi
-                    </button>
-                    <button id="tabGeneratorBtn" data-tab="generator" class="tab-button px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition duration-150 focus:outline-none">
-                        Generator Soal
-                    </button>
-                    <button id="tabLinkGenBtn" data-tab="link-gen" class="tab-button px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition duration-150 focus:outline-none">
-                        Link Ujian
-                    </button>
+                <div class="flex border-b mb-6">
+                    <button id="tab-config-btn" class="tab-btn active px-4 py-2 text-sm font-medium border-b-2 border-indigo-600 text-indigo-600 hover:text-indigo-800 transition duration-150">Konfigurasi</button>
+                    <button id="tab-generator-btn" class="tab-btn px-4 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 transition duration-150">Generator Soal</button>
+                    <button id="tab-link-gen-btn" class="tab-btn px-4 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600 transition duration-150">Generator Link</button>
                 </div>
                 
-                <!-- Tab Content -->
-                <div id="tabContent">
-                    
-                    <!-- Tab Konfigurasi (Config) -->
-                    <div id="configTab" class="tab-page active">
-                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Pengaturan Aplikasi</h3>
-                        
-                        <div class="mb-4">
-                            <label for="spreadsheetIdInput" class="block text-sm font-medium text-gray-700 mb-1">ID Google Spreadsheet (untuk Soal & Hasil)</label>
-                            <input type="text" id="spreadsheetIdInput" placeholder="Masukkan ID Spreadsheet di sini" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                            <p class="text-xs text-gray-500 mt-1">ID ini digunakan untuk mengambil soal dan menyimpan hasil ujian.</p>
-                        </div>
+                <!-- Konten Tab -->
+                <div id="settings-modal-content">
 
-                        <div class="mb-4 p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
-                            <h4 class="text-sm font-medium text-yellow-800 mb-2">Ganti PIN Guru</h4>
-                            <div class="flex space-x-2">
-                                <div class="w-1/2">
-                                    <label for="currentPinInput" class="block text-xs font-medium text-gray-600 mb-1">PIN Saat Ini</label>
-                                    <input type="text" id="currentPinInput" class="w-full p-2 bg-gray-100 border border-gray-300 rounded-lg text-sm" disabled>
-                                </div>
-                                <div class="w-1/2">
-                                    <label for="newPinInput" class="block text-xs font-medium text-gray-600 mb-1">PIN Baru (Kosongkan jika tidak diganti)</label>
-                                    <input type="password" id="newPinInput" placeholder="PIN Baru" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                                </div>
+                    <!-- Tab 1: Konfigurasi Dasar -->
+                    <div id="config-tab-content" class="tab-content active p-4 space-y-4 border rounded-lg bg-gray-50 transition-all duration-300">
+                        <h3 class="text-lg font-semibold text-gray-700">Pengaturan Akses & API</h3>
+                        
+                        <!-- Input PIN Admin -->
+                        <div class="space-y-2">
+                            <label for="admin-pin-input" class="block text-sm font-medium text-gray-700">PIN Admin (4 digit angka)</label>
+                            <input type="password" id="admin-pin-input" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" maxlength="4" placeholder="Contoh: 1234">
+                            <p class="text-xs text-gray-500 mt-1">Gunakan PIN ini untuk mengakses Pengaturan Guru di masa mendatang.</p>
+                        </div>
+                        
+                        <!-- START: Input URL Skrip API (BARU) -->
+                        <div class="space-y-2">
+                            <label for="url-script-input" class="block text-sm font-medium text-gray-700">URL Skrip API (Wajib)</label>
+                            <input type="url" id="url-script-input" class="w-full p-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500" placeholder="Contoh: https://script.google.com/macros/s/ABC/exec">
+                            <p class="text-xs text-gray-500 mt-1">Ini adalah URL API yang digunakan untuk menghasilkan soal dan memberi nilai jawaban.</p>
+                        </div>
+                        <!-- END: Input URL Skrip API (BARU) -->
+                    </div>
+
+                    <!-- Tab 2: Generator Soal -->
+                    <div id="generator-tab-content" class="tab-content p-4 space-y-4 border rounded-lg bg-gray-50 transition-all duration-300">
+                        <h3 class="text-lg font-semibold text-gray-700">Buat Soal Ujian Baru</h3>
+                        <div class="space-y-2">
+                            <label for="topic-input" class="block text-sm font-medium text-gray-700">Topik Soal</label>
+                            <input type="text" id="topic-input" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Contoh: Hukum Newton tentang Gerak">
+                        </div>
+                        <div class="space-y-2">
+                            <label for="level-select" class="block text-sm font-medium text-gray-700">Tingkat Kesulitan</label>
+                            <select id="level-select" class="w-full p-2 border border-gray-300 rounded-md">
+                                <option value="SMP">SMP (Mudah)</option>
+                                <option value="SMA" selected>SMA (Sedang)</option>
+                                <option value="Universitas">Universitas (Sulit)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label for="context-input" class="block text-sm font-medium text-gray-700">Batasan/Kontek Tambahan (Opsional)</label>
+                            <textarea id="context-input" rows="3" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Contoh: Soal harus dalam konteks Biologi, fokus pada sistem pernapasan."></textarea>
+                        </div>
+                        <button id="generate-questions-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 shadow-md disabled:opacity-50">
+                            <span id="generator-btn-text">Buat Soal</span>
+                        </button>
+                    </div>
+
+                    <!-- Tab 3: Generator Link (belum diimplementasikan dalam skrip ini, hanya UI) -->
+                    <div id="link-gen-tab-content" class="tab-content p-4 space-y-4 border rounded-lg bg-gray-50 transition-all duration-300">
+                        <h3 class="text-lg font-semibold text-gray-700">Bagikan Soal via Link</h3>
+                        <p class="text-gray-600">Fitur ini memungkinkan Anda membagikan soal yang aktif (setelah dibuat di tab Generator Soal) melalui tautan unik.</p>
+                        <button id="create-link-btn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 shadow-md disabled:opacity-50" disabled>
+                            Buat Link Soal
+                        </button>
+                        <div class="space-y-2 mt-4 hidden" id="link-display-container">
+                            <label for="quiz-link-output" class="block text-sm font-medium text-gray-700">Tautan Soal Ujian:</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="quiz-link-output" class="flex-grow p-2 border border-gray-300 rounded-md bg-white" readonly value="Tautan akan muncul di sini...">
+                                <button id="copy-link-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150">Salin</button>
                             </div>
                         </div>
-
-                        <p id="settingsMessage" class="text-sm h-5 mb-4"></p>
-                        <button id="saveSettingsBtn" class="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition duration-150 shadow-md">
-                            Simpan Pengaturan
-                        </button>
                     </div>
+                </div>
 
-                    <!-- Tab Generator Soal -->
-                    <div id="generatorTab" class="tab-page hidden">
-                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Buat Soal Baru dengan AI</h3>
-                        <textarea id="generatorPrompt" rows="4" placeholder="Contoh: Buatkan 8 soal esai tentang dampak perubahan iklim terhadap ekosistem laut." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 mb-4"></textarea>
-                        <p id="generatorMessage" class="text-sm h-5 mb-4"></p>
-                        <button id="generateQuestionsBtn" class="w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-150 shadow-md flex items-center justify-center">
-                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" id="generatorSpinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            Generate Soal & Simpan ke Sheet
-                        </button>
-                    </div>
-
-                    <!-- Tab Link Generator -->
-                    <div id="link-genTab" class="tab-page hidden">
-                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Link Berbagi Ujian</h3>
-                        <div class="mb-4">
-                            <label for="linkName" class="block text-sm font-medium text-gray-700 mb-1">Nama Ujian (misal: Ujian Harian Bab 1)</label>
-                            <input type="text" id="linkName" placeholder="Nama Ujian" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div class="flex items-center space-x-2 mb-4">
-                            <input type="text" id="generatedLink" class="flex-grow p-3 bg-gray-100 border border-gray-300 rounded-lg text-sm" readonly placeholder="Link akan muncul di sini...">
-                            <button id="copyLinkBtn" class="bg-gray-200 text-gray-700 p-3 rounded-lg font-semibold hover:bg-gray-300 transition duration-150">
-                                Salin
-                            </button>
-                        </div>
-                        <p id="linkGenMessage" class="text-sm h-5 mb-4"></p>
-                        <button id="createLinkBtn" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold hover:bg-indigo-700 transition duration-150 shadow-md">
-                            Buat Link Ujian
-                        </button>
-                        <p class="text-xs text-gray-500 mt-2">Pastikan Spreadsheet ID sudah diatur sebelum membuat link.</p>
-                    </div>
+                <div class="mt-6 border-t pt-4 text-right">
+                    <button id="save-settings-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-150 shadow-md">Simpan Pengaturan</button>
                 </div>
 
             </div>
         </div>
     </div>
 
-    <!-- Main Content Area -->
-    <div id="main-ui" class="w-full max-w-4xl p-6 bg-white rounded-xl shadow-md">
-        <div id="start-screen">
-            <h2 class="text-xl font-semibold mb-4 text-gray-800">Mulai Ujian</h2>
-            <div class="space-y-4 mb-6">
-                <div>
-                    <label for="studentNameInput" class="block text-sm font-medium text-gray-700 mb-1">Nama Siswa</label>
-                    <input type="text" id="studentNameInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Masukkan nama Anda">
-                </div>
-                <div class="flex space-x-4">
-                    <div class="w-1/2">
-                        <label for="studentClassInput" class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
-                        <input type="text" id="studentClassInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Contoh: X-A">
-                    </div>
-                    <div class="w-1/2">
-                        <label for="subjectInput" class="block text-sm font-medium text-gray-700 mb-1">Mata Pelajaran</label>
-                        <input type="text" id="subjectInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Contoh: Sejarah">
-                    </div>
-                </div>
+    <!-- Overlay Pesan (untuk alert custom) -->
+    <div id="message-overlay" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-[60] transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm m-4 p-6 space-y-4 transition-transform duration-300 transform scale-95 opacity-0">
+            <h3 id="overlay-title" class="text-xl font-bold text-gray-800">Pesan</h3>
+            <p id="overlay-text" class="text-gray-600"></p>
+            <div class="flex justify-end">
+                <button id="overlay-close-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150">Tutup</button>
             </div>
-            <button id="startQuizBtn" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-150 shadow-md">
-                Mulai Ujian
-            </button>
-            <p id="startMessage" class="mt-4 text-sm text-red-500 text-center"></p>
         </div>
-
-        <div id="quiz-screen" class="hidden">
-            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
-                <h3 class="text-xl font-semibold text-gray-800">Soal <span id="currentQuestionIndex">1</span> dari <span id="totalQuestionsCount">1</span></h3>
-                <span id="quizStatus" class="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-700">Berjalan</span>
-            </div>
-            
-            <div id="questionContainer" class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <p id="questionText" class="text-lg text-gray-800"></p>
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-md font-medium text-gray-700 mb-2">Jawaban Anda:</label>
-                <div id="writingToolbar" class="flex flex-wrap gap-1 mb-2">
-                    <!-- Toolbar karakter khusus (misal: untuk Matematika/Sains) -->
-                    <button data-char="α" class="toolbar-btn bg-gray-200 hover:bg-gray-300 p-2 rounded-md text-sm">α</button>
-                    <button data-char="β" class="toolbar-btn bg-gray-200 hover:bg-gray-300 p-2 rounded-md text-sm">β</button>
-                    <button data-char="Σ" class="toolbar-btn bg-gray-200 hover:bg-gray-300 p-2 rounded-md text-sm">Σ</button>
-                    <button data-char="°" class="toolbar-btn bg-gray-200 hover:bg-gray-300 p-2 rounded-md text-sm">°</button>
-                    <button data-char="±" class="toolbar-btn bg-gray-200 hover:bg-gray-300 p-2 rounded-md text-sm">±</button>
-                </div>
-                <textarea id="studentAnswerInput" rows="8" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 resize-none" placeholder="Tulis jawaban esai Anda di sini..."></textarea>
-            </div>
-
-            <div class="flex justify-between space-x-4">
-                <button id="prevQuestionBtn" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-400 transition duration-150 w-1/3 disabled:opacity-50" disabled>
-                    &larr; Sebelumnya
-                </button>
-                <button id="nextQuestionBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-150 w-1/3">
-                    Lanjut &rarr;
-                </button>
-                <button id="submitAnswerBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition duration-150 w-1/3 hidden">
-                    Koreksi Jawaban
-                </button>
-            </div>
-            <p id="quizMessage" class="mt-4 text-sm h-5 text-center"></p>
-        </div>
-
-        <div id="results-screen" class="hidden">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">Hasil Ujian</h2>
-            
-            <div class="bg-blue-50 p-6 rounded-xl shadow-inner mb-6">
-                <div class="flex justify-between items-center mb-3">
-                    <span class="text-lg font-medium text-gray-700">Skor Rata-rata:</span>
-                    <span id="averageScoreDisplay" class="text-3xl font-extrabold text-blue-600">0</span>
-                </div>
-                <div class="flex justify-between text-sm text-gray-600">
-                    <span>Total Soal:</span>
-                    <span id="totalQuestionsDisplay">0</span>
-                </div>
-                <div class="flex justify-between text-sm text-gray-600">
-                    <span>Waktu:</span>
-                    <span id="studentInfoDisplay"></span>
-                </div>
-            </div>
-
-            <h3 class="text-xl font-semibold mb-3 text-gray-800">Detail Koreksi</h3>
-            <div id="detailedResults" class="space-y-6">
-                <!-- Detailed results will be inserted here -->
-            </div>
-
-            <div class="mt-8 flex space-x-4">
-                <button id="retakeQuizBtn" class="flex-1 bg-yellow-600 text-white p-3 rounded-lg font-semibold hover:bg-yellow-700 transition duration-150 shadow-md">
-                    Ulangi Ujian
-                </button>
-                <button id="downloadPdfBtn" class="flex-1 bg-red-600 text-white p-3 rounded-lg font-semibold hover:bg-red-700 transition duration-150 shadow-md">
-                    Unduh PDF
-                </button>
-            </div>
-            <p id="resultsMessage" class="mt-4 text-sm h-5 text-center"></p>
-        </div>
-        
     </div>
-</div>
 
 <script>
-    // --- Variabel Global ---
-    let quizData = [];
-    let currentQuestionIndex = 0;
-    let studentInfo = { name: '', class: '', subject: '' };
-    const APP_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; // GANTI DENGAN URL DEPLOY ANDA
+    const QUIZ_KEY = 'currentQuizQuestion';
+    const ANSWER_KEY = 'studentAnswer';
+    const PIN_KEY = 'adminPin';
+    const URL_KEY = 'scriptUrl'; // Kunci baru untuk URL API
+    const DEFAULT_PIN = '1234';
 
-    // --- DOM Elements ---
-    const startScreen = document.getElementById('start-screen');
-    const quizScreen = document.getElementById('quiz-screen');
-    const resultsScreen = document.getElementById('results-screen');
-    const questionText = document.getElementById('questionText');
-    const studentAnswerInput = document.getElementById('studentAnswerInput');
-    const teacherSettingsBtn = document.getElementById('teacherSettingsBtn');
-    const settingsModal = document.getElementById('settingsModal');
-    const settingsBackdrop = document.getElementById('settingsBackdrop');
-    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-    const pinInput = document.getElementById('pinInput');
-    const submitPinBtn = document.getElementById('submitPinBtn');
-    const settingsContent = document.getElementById('settingsContent');
-    const pinEntry = document.getElementById('pinEntry');
-    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-    const spreadsheetIdInput = document.getElementById('spreadsheetIdInput');
-    const currentPinInput = document.getElementById('currentPinInput');
-    const newPinInput = document.getElementById('newPinInput');
-    const generatorPrompt = document.getElementById('generatorPrompt');
-    const generateQuestionsBtn = document.getElementById('generateQuestionsBtn');
-    const generatorSpinner = document.getElementById('generatorSpinner');
-    const writingToolbar = document.getElementById('writingToolbar');
+    // Global state
+    let startTime = null;
+    let quizQuestion = '';
+    let adminPin = DEFAULT_PIN;
+    let scriptUrl = ''; // Global variable untuk URL API
 
-    // Tab buttons
-    const tabConfigBtn = document.getElementById('tabConfigBtn');
-    const tabGeneratorBtn = document.getElementById('tabGeneratorBtn');
-    const tabLinkGenBtn = document.getElementById('tabLinkGenBtn');
+    // DOM Elements
+    const quizQuestionDiv = document.getElementById('quiz-question');
+    const studentAnswerInput = document.getElementById('student-answer-input');
+    const submitAnswerBtn = document.getElementById('submit-answer-btn');
+    const retakeQuizBtn = document.getElementById('retake-quiz-btn');
+    const resultsArea = document.getElementById('results-area');
+    const scoreDisplay = document.getElementById('score-display');
+    const timeDisplay = document.getElementById('time-display');
+    const aiFeedbackDiv = document.getElementById('ai-feedback');
+    const downloadPdfBtn = document.getElementById('download-pdf-btn');
 
+    // Settings Modal DOM
+    const settingsModal = document.getElementById('settings-modal');
+    const teacherSettingsBtn = document.getElementById('teacher-settings-btn');
+    const settingsBackdrop = document.getElementById('settings-backdrop');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
+    const closeConfigBtn = document.getElementById('close-config-btn');
+    const pinCheckScreen = document.getElementById('pin-check-screen');
+    const settingsConfigScreen = document.getElementById('settings-config-screen');
+    const pinInput = document.getElementById('pin-input');
+    const submitPinBtn = document.getElementById('submit-pin-btn');
+    const saveSettingsBtn = document.getElementById('save-settings-btn');
+    const adminPinInput = document.getElementById('admin-pin-input');
+    const urlScriptInput = document.getElementById('url-script-input'); // DOM Baru
 
-    // --- UTILITY FUNCTIONS ---
+    // Tab Buttons & Content
+    const tabConfigBtn = document.getElementById('tab-config-btn');
+    const tabGeneratorBtn = document.getElementById('tab-generator-btn');
+    const tabLinkGenBtn = document.getElementById('tab-link-gen-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
 
-    function showMessage(message, elementId, className = 'text-red-500') {
-        const el = document.getElementById(elementId);
-        if (el) {
-            el.textContent = message;
-            el.className = `mt-2 text-sm text-center ${className}`;
+    // Generator Tab DOM
+    const topicInput = document.getElementById('topic-input');
+    const levelSelect = document.getElementById('level-select');
+    const contextInput = document.getElementById('context-input');
+    const generateQuestionsBtn = document.getElementById('generate-questions-btn');
+    const generatorBtnText = document.getElementById('generator-btn-text');
+
+    // Overlay Message DOM
+    const messageOverlay = document.getElementById('message-overlay');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayText = document.getElementById('overlay-text');
+    const overlayCloseBtn = document.getElementById('overlay-close-btn');
+
+    // Link Generator DOM
+    const createLinkBtn = document.getElementById('create-link-btn');
+    const copyLinkBtn = document.getElementById('copy-link-btn');
+    const linkDisplayContainer = document.getElementById('link-display-container');
+    const quizLinkOutput = document.getElementById('quiz-link-output');
+
+    /**
+     * UTILITY FUNCTIONS
+     */
+
+    // Menampilkan Overlay Pesan Kustom
+    function showOverlayMessage(title, message, type = 'info') {
+        overlayTitle.textContent = title;
+        overlayText.textContent = message;
+        
+        // Atur warna berdasarkan tipe pesan
+        overlayTitle.classList.remove('text-green-700', 'text-red-700');
+        if (type === 'success') {
+            overlayTitle.classList.add('text-green-700');
+        } else if (type === 'error') {
+            overlayTitle.classList.add('text-red-700');
+        } else {
+            overlayTitle.classList.add('text-indigo-600');
         }
+
+        messageOverlay.classList.remove('hidden');
+        messageOverlay.classList.add('flex');
+        // Animasi masuk
+        const contentWrapper = messageOverlay.querySelector('div');
+        setTimeout(() => {
+            contentWrapper.classList.remove('scale-95', 'opacity-0');
+            contentWrapper.classList.add('scale-100', 'opacity-100');
+        }, 10);
     }
 
-    function insertAtCursor(textarea, text) {
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const value = textarea.value;
-        
-        textarea.value = value.substring(0, start) + text + value.substring(end);
-        textarea.selectionStart = textarea.selectionEnd = start + text.length;
-        textarea.focus();
+    // Menutup Overlay Pesan Kustom
+    function closeOverlayMessage() {
+        const contentWrapper = messageOverlay.querySelector('div');
+        contentWrapper.classList.remove('scale-100', 'opacity-100');
+        contentWrapper.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            messageOverlay.classList.add('hidden');
+            messageOverlay.classList.remove('flex');
+        }, 300);
     }
 
-    // --- CORE LOGIC: API INTERACTION ---
 
-    async function sendRequest(action, data = {}) {
-        const spreadsheetId = localStorage.getItem('spreadsheetId');
-        if (!spreadsheetId && action !== 'testConnection') {
-            showMessage("Error: Spreadsheet ID belum diatur. Masuk ke Pengaturan Guru.", 'quizMessage');
-            return { success: false, message: "Spreadsheet ID is not set." };
+    /**
+     * FIREBASE & API FUNCTIONS
+     */
+    
+    // Fungsi untuk memanggil Google Script API
+    async function callApi(action, data) {
+        if (!scriptUrl) {
+            showOverlayMessage("Kesalahan Konfigurasi", "URL Skrip API belum diatur. Silakan atur di Pengaturan Guru > Konfigurasi.", "error");
+            return { error: true, message: 'Script URL not configured.' };
         }
 
-        const payload = {
-            action: action,
-            spreadsheetId: spreadsheetId,
-            ...data
-        };
-        
-        // Sederhanakan URL untuk memudahkan pengujian di lingkungan sandbox
-        let url = APP_SCRIPT_URL;
-
-        if (url === 'YOUR_APPS_SCRIPT_URL_HERE') {
-            showMessage("Error: Harap ganti 'YOUR_APPS_SCRIPT_URL_HERE' dengan URL Apps Script Anda.", 'quizMessage', 'text-red-600');
-            return { success: false, message: "URL Apps Script must be set." };
-        }
+        const payload = { action, ...data };
 
         try {
-            const response = await fetch(url, {
+            const response = await fetch(scriptUrl, {
                 method: 'POST',
+                mode: 'cors',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {
-                // Tangani respons HTTP non-200
-                const errorText = await response.text();
-                throw new Error(`HTTP Error: ${response.status} - ${errorText}`);
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             return await response.json();
-
         } catch (error) {
-            console.error('Fetch Error:', error);
-            showMessage(`Koneksi Gagal/Error Server: ${error.message.substring(0, 100)}...`, 'quizMessage');
-            return { success: false, message: "Koneksi ke Apps Script gagal." };
+            console.error('API Call Error:', error);
+            showOverlayMessage("Kesalahan Jaringan/API", `Gagal menghubungi server: ${error.message}. Pastikan URL Skrip API sudah benar.`, "error");
+            return { error: true, message: error.message };
         }
     }
 
-    // --- QUIZ FLOW FUNCTIONS ---
+    /**
+     * CORE QUIZ FUNCTIONS
+     */
 
-    async function startQuiz() {
-        studentInfo.name = document.getElementById('studentNameInput').value.trim();
-        studentInfo.class = document.getElementById('studentClassInput').value.trim();
-        studentInfo.subject = document.getElementById('subjectInput').value.trim();
-        
-        if (!studentInfo.name || !studentInfo.class || !studentInfo.subject) {
-            showMessage("Harap isi Nama, Kelas, dan Mata Pelajaran.", 'startMessage');
-            return;
-        }
+    // Muat Soal dan Jawaban dari Local Storage
+    function loadQuiz() {
+        const savedQuiz = localStorage.getItem(QUIZ_KEY);
+        const savedAnswer = localStorage.getItem(ANSWER_KEY);
 
-        // Dummy data for simulation (Replace this with real data fetching if needed later)
-        quizData = [
-            { question: "Jelaskan proses fotosintesis secara rinci dan faktor-faktor yang mempengaruhinya.", keyAnswer: "Fotosintesis adalah proses di mana tumbuhan mengubah energi cahaya menjadi glukosa. Kunci jawabannya harus mencakup langkah-langkah (reaksi terang dan gelap) serta faktor-faktor (cahaya, air, CO2, suhu).", studentAnswer: "", score: null, feedback: null },
-            { question: "Tuliskan biografi singkat tentang salah satu tokoh proklamator Indonesia.", keyAnswer: "Jelaskan Soekarno atau Hatta, mencakup tanggal lahir, peran dalam proklamasi, dan kontribusi utama setelah kemerdekaan.", studentAnswer: "", score: null, feedback: null },
-            { question: "Mengapa revolusi industri membawa dampak buruk bagi lingkungan hidup?", keyAnswer: "Fokus pada peningkatan polusi dari pabrik, penggunaan bahan bakar fosil, dan urbanisasi yang merusak habitat.", studentAnswer: "", score: null, feedback: null }
-        ];
+        if (savedQuiz) {
+            const quizData = JSON.parse(savedQuiz);
+            quizQuestion = quizData.question || '';
+            startTime = quizData.startTime ? new Date(quizData.startTime) : new Date();
 
-        if (quizData.length === 0) {
-            showMessage("Tidak ada soal yang tersedia. Harap hubungi guru Anda.", 'startMessage', 'text-orange-500');
-            return;
-        }
-
-        document.getElementById('totalQuestionsCount').textContent = quizData.length;
-        currentQuestionIndex = 0;
-        
-        startScreen.classList.add('hidden');
-        quizScreen.classList.remove('hidden');
-        resultsScreen.classList.add('hidden');
-        
-        displayQuestion();
-        showMessage('', 'startMessage');
-    }
-
-    function displayQuestion() {
-        const data = quizData[currentQuestionIndex];
-        
-        questionText.textContent = data.question;
-        studentAnswerInput.value = data.studentAnswer || '';
-        document.getElementById('currentQuestionIndex').textContent = currentQuestionIndex + 1;
-        
-        // Update button visibility
-        document.getElementById('prevQuestionBtn').disabled = (currentQuestionIndex === 0);
-        
-        if (currentQuestionIndex === quizData.length - 1) {
-            document.getElementById('nextQuestionBtn').classList.add('hidden');
-            document.getElementById('submitAnswerBtn').classList.remove('hidden');
-        } else {
-            document.getElementById('nextQuestionBtn').classList.remove('hidden');
-            document.getElementById('submitAnswerBtn').classList.add('hidden');
-        }
-    }
-
-    function navigate(direction) {
-        // Save current answer before navigating
-        quizData[currentQuestionIndex].studentAnswer = studentAnswerInput.value;
-
-        if (direction === 'prev' && currentQuestionIndex > 0) {
-            currentQuestionIndex--;
-        } else if (direction === 'next' && currentQuestionIndex < quizData.length - 1) {
-            currentQuestionIndex++;
-        }
-        displayQuestion();
-    }
-
-    async function submitAnswer() {
-        // Save the final answer
-        quizData[currentQuestionIndex].studentAnswer = studentAnswerInput.value;
-
-        if (!confirm("Anda yakin ingin mengirim semua jawaban untuk dikoreksi?")) {
-            return;
-        }
-
-        showMessage("Mengirim jawaban untuk dikoreksi AI... Harap tunggu.", 'quizMessage', 'text-blue-600');
-        
-        // Loop through all questions and send them to gradeAnswer API
-        let allGradedResults = [];
-        let scoreSum = 0;
-
-        for (const [index, item] of quizData.entries()) {
-            if (!item.studentAnswer) {
-                // Skip if no answer is provided, treat as 0 score
-                item.score = 0;
-                item.feedback = "Tidak ada jawaban yang diberikan.";
-            } else {
-                const result = await sendRequest('gradeAnswer', {
-                    question: item.question,
-                    keyAnswer: item.keyAnswer,
-                    studentAnswer: item.studentAnswer
-                });
-
-                if (result.success) {
-                    item.score = result.score;
-                    item.feedback = result.feedback;
-                } else {
-                    item.score = 0;
-                    item.feedback = `Koreksi AI Gagal: ${result.message}`;
-                }
-            }
-            scoreSum += item.score;
+            quizQuestionDiv.innerHTML = quizQuestion;
             
-            // Update UI during grading (optional, for feedback)
-            showMessage(`Mengoreksi soal ${index + 1} dari ${quizData.length}...`, 'quizMessage', 'text-blue-600');
+            if (quizQuestion) {
+                // Ada soal, aktifkan input dan tombol kirim
+                studentAnswerInput.removeAttribute('disabled');
+                submitAnswerBtn.removeAttribute('disabled');
+                retakeQuizBtn.setAttribute('disabled', 'true');
+            }
+            
+            if (savedAnswer) {
+                // Jawaban sudah dikirim (berarti sudah dinilai)
+                const answerData = JSON.parse(savedAnswer);
+                studentAnswerInput.value = answerData.answer;
+                studentAnswerInput.setAttribute('disabled', 'true');
+                submitAnswerBtn.setAttribute('disabled', 'true');
+                retakeQuizBtn.removeAttribute('disabled');
+                
+                displayResults(answerData.score, answerData.feedback, answerData.timeTaken);
+            } else {
+                // Belum dinilai, pastikan hasil tersembunyi
+                resultsArea.classList.add('hidden');
+            }
+        } else {
+            // Belum ada soal, tampilkan pesan default
+            quizQuestionDiv.innerHTML = '<p>Silakan tekan tombol **Pengaturan Guru** untuk membuat soal ujian baru.</p>';
+            studentAnswerInput.setAttribute('disabled', 'true');
+            submitAnswerBtn.setAttribute('disabled', 'true');
+            retakeQuizBtn.setAttribute('disabled', 'true');
         }
-        
-        const averageScore = Math.round(scoreSum / quizData.length);
+    }
 
-        // Prepare final result data for saving
-        const finalResult = {
-            studentName: studentInfo.name,
-            studentClass: studentInfo.class,
-            subject: studentInfo.subject,
-            averageScore: averageScore,
-            totalQuestions: quizData.length,
-            detail: quizData.map(q => ({
-                question: q.question,
-                answer: q.studentAnswer,
-                score: q.score,
-                feedback: q.feedback
-            }))
+    // Kirim Jawaban dan Nilai
+    async function submitAnswer() {
+        const studentAnswer = studentAnswerInput.value.trim();
+        if (studentAnswer.length < 50) {
+            showOverlayMessage("Jawaban Terlalu Pendek", "Jawaban esai Anda harus minimal 50 karakter.", "info");
+            return;
+        }
+
+        // Hitung waktu pengerjaan
+        const endTime = new Date();
+        const timeTakenMs = endTime - startTime;
+        const seconds = Math.floor(timeTakenMs / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        const timeTakenFormatted = `${minutes}m ${remainingSeconds}s`;
+
+        // Tampilkan loading
+        submitAnswerBtn.setAttribute('disabled', 'true');
+        submitAnswerBtn.querySelector('#submit-text').innerHTML = 'Menilai<span class="loading-dots"></span>';
+        studentAnswerInput.setAttribute('disabled', 'true');
+
+        const apiData = {
+            question: quizQuestion,
+            answer: studentAnswer,
+            level: 'SMA' // Asumsi level default, bisa diatur lebih lanjut
         };
 
-        // Save results to Google Sheet
-        const saveResponse = await sendRequest('saveResult', { result: finalResult });
+        const result = await callApi('gradeEssay', apiData);
 
-        if (saveResponse.success) {
-            showMessage("Koreksi selesai. Hasil berhasil dicatat.", 'quizMessage', 'text-green-600');
+        // Hentikan loading
+        submitAnswerBtn.querySelector('#submit-text').textContent = 'Kirim Jawaban & Nilai';
+
+        if (result && !result.error && result.score !== undefined) {
+            const score = result.score;
+            const feedback = result.feedback || 'Tidak ada umpan balik yang disediakan.';
+            
+            // Simpan hasil penilaian
+            const answerData = {
+                answer: studentAnswer,
+                score: score,
+                feedback: feedback,
+                timeTaken: timeTakenFormatted
+            };
+            localStorage.setItem(ANSWER_KEY, JSON.stringify(answerData));
+
+            displayResults(score, feedback, timeTakenFormatted);
+
+            submitAnswerBtn.setAttribute('disabled', 'true');
+            retakeQuizBtn.removeAttribute('disabled');
+            showOverlayMessage("Penilaian Selesai", `Skor Anda: ${score}/100`, "success");
+
+        } else if (result.message && result.message === 'Script URL not configured.') {
+             // Do nothing, showOverlayMessage already called in callApi
+             // Re-enable input if API call failed due to configuration
+             studentAnswerInput.removeAttribute('disabled');
         } else {
-            showMessage(`Koreksi selesai. Gagal mencatat hasil: ${saveResponse.message}`, 'quizMessage', 'text-orange-600');
+            // Gagal penilaian
+            studentAnswerInput.removeAttribute('disabled');
+            showOverlayMessage("Gagal Menilai", "Terjadi kesalahan saat menghubungi API penilaian.", "error");
+        }
+    }
+
+    // Tampilkan Hasil
+    function displayResults(score, feedback, timeTaken) {
+        scoreDisplay.textContent = `${score}/100`;
+        timeDisplay.textContent = timeTaken;
+        aiFeedbackDiv.innerHTML = feedback; // Diasumsikan feedback sudah dalam format HTML/Markdown
+        resultsArea.classList.remove('hidden');
+        // Geser ke area hasil
+        resultsArea.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Ulangi Ujian (Reset Local Storage)
+    function retakeQuiz() {
+        localStorage.removeItem(ANSWER_KEY);
+        localStorage.removeItem(QUIZ_KEY); // Hapus soal juga agar bisa mulai dari awal
+        loadQuiz();
+        resultsArea.classList.add('hidden');
+        studentAnswerInput.value = '';
+        showOverlayMessage("Ujian Direset", "Soal dan jawaban Anda telah direset. Silakan buat soal baru di Pengaturan Guru.", "info");
+    }
+
+    /**
+     * SETTINGS MODAL FUNCTIONS
+     */
+
+    // Muat Pengaturan dari Local Storage
+    function loadSettings() {
+        const savedPin = localStorage.getItem(PIN_KEY);
+        if (savedPin) {
+            adminPin = savedPin;
+        }
+        adminPinInput.value = adminPin;
+        
+        // MUAT URL SKRIP API BARU
+        const savedUrl = localStorage.getItem(URL_KEY);
+        if (savedUrl) {
+            scriptUrl = savedUrl;
+            urlScriptInput.value = savedUrl;
+        } else {
+            scriptUrl = '';
+            urlScriptInput.value = '';
         }
 
-        displayResults(finalResult);
+        // Tampilkan peringatan jika URL belum disetel
+        if (!scriptUrl) {
+            console.warn("URL Skrip API belum diatur!");
+        }
     }
 
-    function displayResults(finalResult) {
-        quizScreen.classList.add('hidden');
-        resultsScreen.classList.remove('hidden');
-        
-        document.getElementById('averageScoreDisplay').textContent = finalResult.averageScore;
-        document.getElementById('totalQuestionsDisplay').textContent = finalResult.totalQuestions;
-        document.getElementById('studentInfoDisplay').textContent = `${finalResult.studentName} (${finalResult.studentClass}, ${finalResult.subject})`;
+    // Simpan Pengaturan ke Local Storage
+    function saveSettings() {
+        // Simpan PIN
+        const newPin = adminPinInput.value.trim();
+        if (newPin && /^\d{4}$/.test(newPin)) {
+            localStorage.setItem(PIN_KEY, newPin);
+            adminPin = newPin;
+            showOverlayMessage("Pengaturan Disimpan", "PIN Admin berhasil diperbarui.", "success");
+        } else {
+            showOverlayMessage("Kesalahan PIN", "PIN Admin harus 4 digit angka.", "error");
+            return;
+        }
 
-        const detailedResults = document.getElementById('detailedResults');
-        detailedResults.innerHTML = '';
-        
-        finalResult.detail.forEach((item, index) => {
-            const html = `
-                <div class="p-4 border border-gray-200 rounded-lg shadow-sm">
-                    <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-bold text-gray-800">Soal ${index + 1}</h4>
-                        <span class="text-2xl font-extrabold text-green-600">${item.score}/100</span>
-                    </div>
-                    <p class="text-gray-700 mb-2">${item.question}</p>
-                    <div class="mt-3 p-3 bg-gray-50 border-l-4 border-blue-400 rounded-md">
-                        <p class="font-medium text-blue-800 mb-1">Jawaban Siswa:</p>
-                        <p class="text-sm text-gray-700 whitespace-pre-wrap">${item.answer || 'Tidak ada jawaban'}</p>
-                    </div>
-                    <div class="mt-3 p-3 bg-green-50 border-l-4 border-green-400 rounded-md">
-                        <p class="font-medium text-green-800 mb-1">Umpan Balik AI:</p>
-                        <p class="text-sm text-gray-700 whitespace-pre-wrap">${item.feedback}</p>
-                    </div>
-                </div>
-            `;
-            detailedResults.insertAdjacentHTML('beforeend', html);
-        });
+        // Simpan URL Skrip API (BARU)
+        const newScriptUrl = urlScriptInput.value.trim();
+        localStorage.setItem(URL_KEY, newScriptUrl);
+        scriptUrl = newScriptUrl;
+
+        if (!newScriptUrl) {
+            showOverlayMessage("Peringatan", "Anda belum mengatur URL Skrip API. Generator Soal tidak akan berfungsi.", "info");
+        } else {
+            // Jika berhasil, tutup modal
+            closeSettingsModal();
+        }
     }
 
-    function retakeQuiz() {
-        // Clear answers and reset state
-        quizData.forEach(q => {
-            q.studentAnswer = "";
-            q.score = null;
-            q.feedback = null;
-        });
-        currentQuestionIndex = 0;
-        
-        resultsScreen.classList.add('hidden');
-        startScreen.classList.remove('hidden');
-        showMessage('', 'resultsMessage');
-    }
-
-    async function downloadResultsAsPDF() {
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const element = document.getElementById('results-screen');
-        
-        showMessage('Membuat PDF... Harap tunggu.', 'resultsMessage', 'text-blue-600');
-
-        // Menggunakan html2canvas untuk menangkap tampilan hasil
-        html2canvas(element, { scale: 2 }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const imgWidth = 210; 
-            const pageHeight = 295; 
-            const imgHeight = canvas.height * imgWidth / canvas.width;
-            let heightLeft = imgHeight;
-            
-            let position = 0;
-
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-
-            while (heightLeft >= 0) {
-                position = heightLeft - imgHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-            }
-
-            pdf.save(`Hasil_Ujian_${studentInfo.name.replace(/\s/g, '_')}.pdf`);
-            showMessage('PDF berhasil dibuat.', 'resultsMessage', 'text-green-600');
-        }).catch(error => {
-            console.error("Error generating PDF:", error);
-            showMessage('Gagal membuat PDF. Coba lagi.', 'resultsMessage', 'text-red-600');
-        });
-    }
-
-    // --- SETTINGS/TEACHER FUNCTIONS ---
-
-    // ** FUNGSI YANG DIPERBAIKI UNTUK MEMBUKA MODAL **
+    // Buka Modal Pengaturan Guru
     function openSettingsModal() {
+        // Reset tampilan modal ke layar PIN
+        pinCheckScreen.classList.remove('hidden');
+        settingsConfigScreen.classList.add('hidden');
+        pinInput.value = '';
+        submitPinBtn.setAttribute('disabled', 'true');
+        
+        // Reset tab ke Konfigurasi
+        switchTab('config');
+        
         settingsModal.classList.remove('hidden');
         settingsModal.classList.add('flex');
         
-        // Load settings when opening
-        loadSettings();
-
-        // Show PIN input first
-        pinEntry.classList.remove('hidden');
-        settingsContent.classList.add('hidden');
-        pinInput.value = ''; // Clear PIN input
-        showMessage('', 'pinMessage'); // Clear pin message
-        
-        // Set default tab to config
-        switchTab('config');
+        // Animasi masuk
+        const contentWrapper = document.getElementById('settings-modal-content-wrapper');
+        setTimeout(() => {
+            contentWrapper.classList.remove('scale-95', 'opacity-0');
+            contentWrapper.classList.add('scale-100', 'opacity-100');
+            pinInput.focus();
+        }, 10);
     }
 
+    // Tutup Modal Pengaturan Guru
     function closeSettingsModal() {
-        settingsModal.classList.add('hidden');
-        settingsModal.classList.remove('flex');
+        const contentWrapper = document.getElementById('settings-modal-content-wrapper');
+        contentWrapper.classList.remove('scale-100', 'opacity-100');
+        contentWrapper.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            settingsModal.classList.add('hidden');
+            settingsModal.classList.remove('flex');
+        }, 300);
     }
 
+    // Cek PIN Admin
     function checkPin() {
-        const enteredPin = pinInput.value;
-        const currentPin = localStorage.getItem('teacherPin') || '1234'; // Default PIN
-
-        if (enteredPin === currentPin) {
-            pinEntry.classList.add('hidden');
-            settingsContent.classList.remove('hidden');
-            showMessage('PIN Benar. Akses Pengaturan Guru.', 'pinMessage', 'text-green-500');
-            
-            // Load settings content after successful login
-            spreadsheetIdInput.value = localStorage.getItem('spreadsheetId') || '';
-            currentPinInput.value = currentPin;
+        if (pinInput.value === adminPin) {
+            pinCheckScreen.classList.add('hidden');
+            settingsConfigScreen.classList.remove('hidden');
+            loadSettings(); // Muat pengaturan saat masuk
         } else {
-            showMessage('PIN salah. Coba lagi.', 'pinMessage', 'text-red-500');
+            pinInput.classList.add('border-red-500');
+            showOverlayMessage("Akses Ditolak", "PIN Admin salah. Silakan coba lagi.", "error");
+            setTimeout(() => pinInput.classList.remove('border-red-500'), 1000);
         }
     }
 
-    function saveSettings() {
-        const newSpreadsheetId = spreadsheetIdInput.value.trim();
-        const newPin = newPinInput.value.trim();
-
-        if (newSpreadsheetId) {
-            localStorage.setItem('spreadsheetId', newSpreadsheetId);
-        }
-        
-        if (newPin) {
-            localStorage.setItem('teacherPin', newPin);
-            currentPinInput.value = newPin; // Update current PIN display
-            newPinInput.value = ''; // Clear new PIN input
-            showMessage('Pengaturan dan PIN Baru berhasil disimpan!', 'settingsMessage', 'text-green-500');
-        } else {
-            showMessage('Pengaturan berhasil disimpan.', 'settingsMessage', 'text-green-500');
-        }
-        
-        // Update the UI status on the main page
-        loadSettings();
-    }
-    
-    function loadSettings() {
-        const spreadsheetId = localStorage.getItem('spreadsheetId');
-        const teacherPin = localStorage.getItem('teacherPin') || '1234'; 
-        
-        const statusEl = document.getElementById('spreadsheetIdStatus');
-        if (statusEl) {
-            if (spreadsheetId) {
-                statusEl.textContent = `ID Sheet: ${spreadsheetId.substring(0, 8)}... (OK)`;
-                statusEl.classList.remove('bg-red-100', 'text-red-700');
-                statusEl.classList.add('bg-green-100', 'text-green-700');
-            } else {
-                statusEl.textContent = "ID Sheet: Belum diatur!";
-                statusEl.classList.remove('bg-green-100', 'text-green-700');
-                statusEl.classList.add('bg-red-100', 'text-red-700');
-            }
-        }
-        
-        // Also update modal fields if they are visible
-        if (!settingsContent.classList.contains('hidden')) {
-             spreadsheetIdInput.value = spreadsheetId || '';
-             currentPinInput.value = teacherPin;
-        }
-    }
-
+    // Navigasi Tab
     function switchTab(tabId) {
-        // Hide all tab pages
-        document.querySelectorAll('.tab-page').forEach(page => page.classList.add('hidden'));
-        // Deactivate all tab buttons
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.classList.remove('border-blue-600', 'text-blue-600');
-            button.classList.add('border-transparent', 'text-gray-500');
+        // Hapus kelas aktif dari semua tombol dan konten
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active', 'border-indigo-600', 'text-indigo-600');
+            btn.classList.add('text-gray-600');
+        });
+        tabContents.forEach(content => {
+            content.classList.remove('active');
         });
 
-        // Show the selected tab page
-        document.getElementById(tabId + 'Tab').classList.remove('hidden');
+        // Tambahkan kelas aktif ke tab yang dipilih
+        const selectedBtn = document.getElementById(`tab-${tabId}-btn`);
+        const selectedContent = document.getElementById(`${tabId}-tab-content`);
         
-        // Activate the selected tab button
-        document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1) + 'Btn').classList.remove('border-transparent', 'text-gray-500');
-        document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1) + 'Btn').classList.add('border-blue-600', 'text-blue-600');
-        
-        showMessage('', 'generatorMessage');
+        if (selectedBtn && selectedContent) {
+            selectedBtn.classList.add('active', 'border-indigo-600', 'text-indigo-600');
+            selectedBtn.classList.remove('text-gray-600');
+            selectedContent.classList.add('active');
+        }
     }
-    
+
+
+    /**
+     * QUESTION GENERATOR FUNCTIONS
+     */
+
     async function generateQuestions() {
-        const prompt = generatorPrompt.value.trim();
-        if (!prompt) {
-            showMessage("Masukkan prompt soal yang ingin digenerate.", 'generatorMessage', 'text-red-500');
+        // PENTING: Periksa URL Skrip API
+        if (!scriptUrl) {
+            showOverlayMessage("Kesalahan Konfigurasi", "URL Skrip API belum diatur. Silakan atur di Pengaturan Guru > Konfigurasi.", "error");
             return;
         }
 
-        generatorSpinner.classList.remove('hidden');
-        generateQuestionsBtn.disabled = true;
-        showMessage('Menggenerate soal dengan AI... ini mungkin memakan waktu.', 'generatorMessage', 'text-blue-600');
+        const topic = topicInput.value.trim();
+        const level = levelSelect.value;
+        const context = contextInput.value.trim();
 
-        const result = await sendRequest('generateQuestions', { prompt: prompt });
+        if (!topic) {
+            showOverlayMessage("Input Kurang", "Mohon masukkan Topik Soal.", "info");
+            return;
+        }
 
-        generatorSpinner.classList.add('hidden');
-        generateQuestionsBtn.disabled = false;
-        
-        if (result.success) {
-            showMessage(result.message, 'generatorMessage', 'text-green-600');
-            generatorPrompt.value = '';
+        // Tampilkan loading
+        generateQuestionsBtn.setAttribute('disabled', 'true');
+        generatorBtnText.innerHTML = 'Membuat Soal<span class="loading-dots"></span>';
+
+        const apiData = {
+            topic: topic,
+            level: level,
+            context: context
+        };
+
+        const result = await callApi('generateQuiz', apiData);
+
+        // Hentikan loading
+        generatorBtnText.textContent = 'Buat Soal';
+        generateQuestionsBtn.removeAttribute('disabled');
+
+        if (result && !result.error && result.question) {
+            quizQuestion = result.question;
+            startTime = new Date();
+            
+            // Simpan soal baru ke local storage
+            localStorage.setItem(QUIZ_KEY, JSON.stringify({
+                question: quizQuestion,
+                startTime: startTime.toISOString()
+            }));
+            localStorage.removeItem(ANSWER_KEY); // Reset jawaban lama
+            
+            loadQuiz(); // Muat soal baru ke UI utama
+            closeSettingsModal();
+            showOverlayMessage("Soal Baru Dibuat", "Soal ujian baru telah berhasil dibuat dan dimuat.", "success");
+
+        } else if (result.message && result.message === 'Script URL not configured.') {
+             // Do nothing, showOverlayMessage already called in callApi
         } else {
-            showMessage(result.message, 'generatorMessage', 'text-red-600');
+            showOverlayMessage("Gagal Membuat Soal", "Terjadi kesalahan saat menghubungi API generator soal.", "error");
         }
     }
-    
-    function createLink() {
-        const linkName = document.getElementById('linkName').value.trim();
-        const spreadsheetId = localStorage.getItem('spreadsheetId');
-        const generatedLink = document.getElementById('generatedLink');
-        
-        if (!spreadsheetId) {
-            showMessage('Harap atur Spreadsheet ID di tab Konfigurasi terlebih dahulu.', 'linkGenMessage', 'text-red-500');
-            return;
-        }
-        
-        // URL Apps Script Web App Anda (pastikan sudah di-deploy)
-        const baseUrl = APP_SCRIPT_URL.replace('/exec', '/dev'); // Gunakan /dev untuk link yang bisa diubah jika belum production
-        
-        // Buat URL dengan parameter
-        const urlParams = new URLSearchParams();
-        urlParams.append('id', spreadsheetId);
-        if (linkName) {
-            urlParams.append('ujian', encodeURIComponent(linkName));
-        }
 
-        const fullLink = `${baseUrl}?${urlParams.toString()}`;
-        generatedLink.value = fullLink;
-        showMessage('Link berhasil dibuat.', 'linkGenMessage', 'text-green-500');
+
+    /**
+     * LINK GENERATOR FUNCTIONS (Placeholder)
+     */
+    function createLink() {
+        showOverlayMessage("Fitur Belum Tersedia", "Generator Link belum diimplementasikan. Harap buat soal secara manual untuk saat ini.", "info");
+        linkDisplayContainer.classList.remove('hidden');
+        quizLinkOutput.value = "https://example.com/quiz?q=" + btoa(quizQuestion.substring(0, 50));
     }
 
     function copyLink() {
-        const generatedLink = document.getElementById('generatedLink');
-        if (generatedLink.value) {
-            navigator.clipboard.writeText(generatedLink.value).then(() => {
-                showMessage('Link berhasil disalin!', 'linkGenMessage', 'text-green-500');
-            }).catch(err => {
-                showMessage('Gagal menyalin link.', 'linkGenMessage', 'text-red-500');
-            });
-        }
+        quizLinkOutput.select();
+        document.execCommand('copy');
+        showOverlayMessage("Berhasil Disalin", "Tautan soal ujian telah disalin ke clipboard.", "success");
     }
 
-    // --- INITIALIZATION ---
-    window.addEventListener('DOMContentLoaded', () => {
-        // Quiz buttons
-        document.getElementById('startQuizBtn').addEventListener('click', startQuiz);
-        document.getElementById('prevQuestionBtn').addEventListener('click', () => navigate('prev'));
-        document.getElementById('nextQuestionBtn').addEventListener('click', () => navigate('next'));
-        document.getElementById('submitAnswerBtn').addEventListener('click', submitAnswer);
-        document.getElementById('retakeQuizBtn').addEventListener('click', retakeQuiz);
-        document.getElementById('downloadPdfBtn').addEventListener('click', downloadResultsAsPDF);
+
+    /**
+     * PDF GENERATOR
+     */
+    function downloadResultsAsPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const MARGIN = 15;
+        let y = MARGIN;
+        const LINE_HEIGHT = 7;
         
-        // Pengaturan Guru (FIXED)
+        doc.setFont('Inter', 'bold');
+        doc.setFontSize(16);
+        doc.text('Laporan Hasil Ujian Esai AI', MARGIN, y);
+        y += LINE_HEIGHT;
+
+        doc.setFont('Inter', 'normal');
+        doc.setFontSize(10);
+        doc.text(`Tanggal Ujian: ${new Date().toLocaleDateString('id-ID')}`, MARGIN, y);
+        y += LINE_HEIGHT;
+        doc.text(`Waktu Pengerjaan: ${timeDisplay.textContent}`, MARGIN, y);
+        y += LINE_HEIGHT * 2;
+
+        // Skor
+        doc.setFont('Inter', 'bold');
+        doc.setFontSize(14);
+        doc.text(`SKOR AKHIR: ${scoreDisplay.textContent}`, MARGIN, y);
+        y += LINE_HEIGHT * 2;
+
+        // Soal
+        doc.setFont('Inter', 'bold');
+        doc.setFontSize(12);
+        doc.text('Soal Ujian:', MARGIN, y);
+        y += LINE_HEIGHT;
+        doc.setFont('Inter', 'normal');
+        doc.setFontSize(10);
+        const questionLines = doc.splitTextToSize(quizQuestionDiv.textContent, 180);
+        doc.text(questionLines, MARGIN, y);
+        y += questionLines.length * LINE_HEIGHT + LINE_HEIGHT;
+
+        // Jawaban Siswa
+        doc.setFont('Inter', 'bold');
+        doc.setFontSize(12);
+        doc.text('Jawaban Siswa:', MARGIN, y);
+        y += LINE_HEIGHT;
+        doc.setFont('Inter', 'normal');
+        doc.setFontSize(10);
+        const answerLines = doc.splitTextToSize(studentAnswerInput.value, 180);
+        doc.text(answerLines, MARGIN, y);
+        y += answerLines.length * LINE_HEIGHT + LINE_HEIGHT;
+
+        // Umpan Balik AI (Menggunakan HTML2Canvas untuk rendering visual)
+        html2canvas(aiFeedbackContainer, { scale: 2 }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = 180;
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+
+            if (y + imgHeight > 280) { // Cek batas bawah halaman A4
+                doc.addPage();
+                y = MARGIN;
+            }
+
+            doc.setFont('Inter', 'bold');
+            doc.setFontSize(12);
+            doc.text('Umpan Balik Mendalam:', MARGIN, y);
+            y += LINE_HEIGHT;
+            
+            doc.addImage(imgData, 'PNG', MARGIN, y, imgWidth, imgHeight);
+            
+            doc.save('Hasil_Ujian_Esai.pdf');
+        });
+    }
+
+    /**
+     * EVENT LISTENERS AND INITIALIZATION
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load settings and quiz data on startup
+        loadSettings();
+        loadQuiz();
+
+        // Overlay Message Event
+        overlayCloseBtn.addEventListener('click', closeOverlayMessage);
+
+        // Input validation for PIN
+        pinInput.addEventListener('input', () => {
+            submitPinBtn.disabled = pinInput.value.length !== 4 || !/^\d+$/.test(pinInput.value);
+        });
+
+        // Core Quiz Actions
+        submitAnswerBtn.addEventListener('click', submitAnswer);
+        retakeQuizBtn.addEventListener('click', retakeQuiz);
+        downloadPdfBtn.addEventListener('click', downloadResultsAsPDF);
+        
+        // Pengaturan Guru
         teacherSettingsBtn.addEventListener('click', openSettingsModal);
         settingsBackdrop.addEventListener('click', closeSettingsModal);
         closeSettingsBtn.addEventListener('click', closeSettingsModal);
+        closeConfigBtn.addEventListener('click', closeSettingsModal);
         submitPinBtn.addEventListener('click', checkPin);
         saveSettingsBtn.addEventListener('click', saveSettings);
 
         // Navigasi Tab
-        document.querySelectorAll('.tab-button').forEach(btn => {
-            btn.addEventListener('click', (e) => switchTab(e.target.dataset.tab));
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.id.split('-')[1]; // config, generator, link
+                switchTab(tabId);
+            });
         });
         
         // Generator Soal
         generateQuestionsBtn.addEventListener('click', generateQuestions);
         
-        // Generator Link
-        document.getElementById('createLinkBtn').addEventListener('click', createLink);
-        document.getElementById('copyLinkBtn').addEventListener('click', copyLink);
+        // Generator Link (Placeholder)
+        createLinkBtn.addEventListener('click', createLink);
+        copyLinkBtn.addEventListener('click', copyLink);
 
         // Toolbar
-        writingToolbar.addEventListener('click', (e) => {
+        document.getElementById('writing-toolbar').addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON' && e.target.dataset.char) {
                 insertAtCursor(studentAnswerInput, e.target.dataset.char);
             }
         });
 
-        // Muat pengaturan saat aplikasi dimulai
-        loadSettings();
+        // Fungsi untuk menyisipkan karakter pada posisi kursor
+        function insertAtCursor(el, text) {
+            const start = el.selectionStart;
+            const end = el.selectionEnd;
+            const value = el.value;
+            el.value = value.substring(0, start) + text + value.substring(end);
+            // Pindahkan kursor setelah karakter yang disisipkan
+            el.selectionStart = el.selectionEnd = start + text.length;
+            el.focus();
+        }
     });
 </script>
 </body>
