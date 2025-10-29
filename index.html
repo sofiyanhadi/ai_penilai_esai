@@ -62,9 +62,7 @@
                     <p class="text-center text-gray-600 mb-6">Silakan masukkan nama dan kelas Anda untuk memulai ujian.</p>
                     <div class="space-y-4">
                         <input type="text" id="student-name-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Nama Lengkap Siswa" required>
-                        <!-- START: Tambah input Kelas -->
                         <input type="text" id="student-class-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Kelas (Contoh: IX A / 9A)" required>
-                        <!-- END: Tambah input Kelas -->
                     </div>
                     <button id="start-quiz-btn" class="mt-4 w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition duration-150" disabled>Mulai Ujian</button>
                 </div>
@@ -107,9 +105,7 @@
                 
                 <div id="score-summary" class="bg-blue-50 p-4 rounded-lg mb-6 border-l-4 border-blue-600">
                     <p class="text-lg font-medium text-gray-800">Nama Siswa: <span id="result-student-name" class="font-bold"></span></p>
-                    <!-- START: Tampilkan Kelas di Hasil -->
                     <p class="text-lg font-medium text-gray-800">Kelas: <span id="result-student-class" class="font-bold"></span></p>
-                    <!-- END: Tampilkan Kelas di Hasil -->
                     <p class="text-lg font-medium text-gray-800">Skor Rata-rata: <span id="result-average-score" class="font-bold text-blue-600">--</span></p>
                     <p class="text-sm text-gray-600 mt-2">Penilaian ini bersifat otomatis menggunakan model AI. Harap tinjau kembali.</p>
                 </div>
@@ -162,7 +158,7 @@
                 <!-- Tab Content Container -->
                 <div id="tab-content-container">
                     
-                    <!-- Konfigurasi Tab Content (Updated as requested) -->
+                    <!-- Konfigurasi Tab Content -->
                     <div id="tab-config-content" class="tab-content" style="display: block;">
                         <!-- Konten Tab Konfigurasi -->
                         <div class="space-y-4">
@@ -196,12 +192,21 @@
                         </div>
                     </div>
                     
-                    <!-- Generator Tab Content (Placeholder) -->
+                    <!-- Generator Tab Content (Implementasi) -->
                     <div id="tab-generator-content" class="tab-content p-4 border rounded-lg bg-gray-50" style="display: none;">
-                        <h3 class="text-xl font-semibold mb-3">Generator Soal (Belum Aktif)</h3>
-                        <p class="text-gray-600">Fitur ini akan memungkinkan Anda membuat soal esai baru menggunakan AI berdasarkan mata pelajaran dan materi yang Anda tentukan.</p>
-                        <textarea id="generator-prompt" rows="4" class="w-full mt-3 px-3 py-2 border rounded-md" placeholder="Masukkan instruksi untuk soal esai (Contoh: Buatkan 3 soal esai tentang 'Teks Prosedur' untuk siswa kelas 7)."></textarea>
-                        <button id="generate-questions-btn" class="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition duration-150 w-full">Generate Soal</button>
+                        <h3 class="text-xl font-semibold mb-3">Generator Soal Esai AI</h3>
+                        <p class="text-gray-600 mb-3 text-sm">Masukkan instruksi lengkap untuk membuat soal dan rubriknya. Contoh: "Buatkan 1 soal esai yang menantang tentang 'Hukum Archimedes' untuk SMA, dengan 3 kriteria penilaian yang spesifik."</p>
+                        <textarea id="generator-prompt" rows="4" class="w-full mt-1 px-3 py-2 border rounded-md" placeholder="Masukkan instruksi untuk soal esai..."></textarea>
+                        
+                        <button id="generate-questions-btn" class="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition duration-150 w-full">Generate Soal & Rubrik</button>
+
+                        <div id="generated-question-output" class="mt-6 p-4 border rounded-lg bg-white hidden">
+                            <h4 class="font-bold mb-2">Soal yang Dihasilkan:</h4>
+                            <div id="output-question" class="text-sm mb-3 whitespace-pre-wrap"></div>
+                            <h4 class="font-bold mb-2">Rubrik Penilaian:</h4>
+                            <ul id="output-rubric" class="list-disc ml-5 text-sm"></ul>
+                            <button id="confirm-save-btn" class="mt-4 bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition duration-150 w-full text-sm">Simpan Soal ke Spreadsheet</button>
+                        </div>
                     </div>
 
                     <!-- Link Generator Tab Content (Placeholder) -->
@@ -231,7 +236,7 @@
         status: 'initial', // 'initial', 'in-progress', 'finished'
         question: null,
         studentName: '',
-        studentClass: '', // Tambah state untuk Kelas Siswa
+        studentClass: '',
         startTime: null,
         timerInterval: null,
         elapsedTime: 0,
@@ -318,6 +323,7 @@
         document.getElementById('settings-tabs-area').classList.add('hidden');
         document.getElementById('pin-input').value = '';
         document.getElementById('pin-input').focus();
+        document.getElementById('generated-question-output').classList.add('hidden'); // Sembunyikan hasil generator saat modal dibuka
     }
 
     function closeSettingsModal() {
@@ -415,7 +421,9 @@
 
         const startBtn = document.getElementById('start-quiz-btn');
         if (currentSettings.sheetUrl && currentSettings.appsScriptUrl) {
-            startBtn.disabled = false;
+            // Kita tidak bisa menonaktifkan tombol start hanya karena soal belum dimuat.
+            // Biarkan `loadQuizData` yang menonaktifkan jika gagal.
+            startBtn.disabled = false; 
         } else {
             startBtn.disabled = true;
             showMessage('Harap atur URL Google Sheet dan Apps Script di Pengaturan Guru (Pin: 1234) untuk memuat soal.', 'info');
@@ -446,13 +454,13 @@
     function loadQuizData() {
         if (!currentSettings.sheetUrl) return;
 
-        // In a real scenario, this would involve a fetch request to Apps Script to get the question
-        // For this demo, we use a placeholder question.
+        // Dalam skenario ideal, ini akan memanggil Apps Script untuk mendapatkan data soal
+        // dari Spreadsheet. Untuk demo, kita gunakan placeholder soal.
         document.getElementById('question-display').textContent = 'Memuat soal...';
 
         // Simulating data fetch
         setTimeout(() => {
-            // Replace with actual data fetching logic
+            // Data soal yang akan dimuat
             quizState.question = {
                 id: 1,
                 text: "Jelaskan dengan detail langkah-langkah untuk membuat teh manis yang enak dan mengapa urutan langkah tersebut penting. (Minimal 3 paragraf)",
@@ -463,16 +471,24 @@
                 ]
             };
             document.getElementById('question-display').textContent = quizState.question.text;
-            document.getElementById('start-quiz-btn').disabled = false;
+            
+            const studentNameInput = document.getElementById('student-name-input');
+            const studentClassInput = document.getElementById('student-class-input');
+            const isNameFilled = studentNameInput.value.trim() !== '';
+            const isClassFilled = studentClassInput.value.trim() !== '';
+            
+            // Aktifkan tombol mulai jika soal dimuat DAN nama/kelas sudah diisi (jika sudah diisi sebelumnya)
+            document.getElementById('start-quiz-btn').disabled = !(isNameFilled && isClassFilled);
+            
         }, 1500);
     }
 
 
     function startQuiz() {
         const studentName = document.getElementById('student-name-input').value.trim();
-        const studentClass = document.getElementById('student-class-input').value.trim(); // Ambil input kelas
+        const studentClass = document.getElementById('student-class-input').value.trim();
         
-        if (!studentName || !studentClass) { // Validasi nama dan kelas
+        if (!studentName || !studentClass) {
             showMessage('Nama siswa dan Kelas wajib diisi.', 'error');
             return;
         }
@@ -483,7 +499,7 @@
         }
 
         quizState.studentName = studentName;
-        quizState.studentClass = studentClass; // Simpan kelas ke state
+        quizState.studentClass = studentClass;
         quizState.status = 'in-progress';
         quizState.startTime = new Date();
         document.getElementById('initial-load-area').classList.add('hidden');
@@ -494,7 +510,6 @@
         startTimer();
     }
 
-    // Placeholder: This should send data to an LLM and then save results
     async function submitAnswer(isTimeout = false) {
         stopTimer();
         const answer = document.getElementById('student-answer-input').value.trim();
@@ -529,12 +544,6 @@
             [
               {
                 "kriteria": "[Kriteria 1 dari rubrik]",
-                "bobot": [Bobot %],
-                "skor": [Skor 0-100],
-                "feedback": "[Ulasan singkat dan spesifik]"
-              },
-              {
-                "kriteria": "[Kriteria 2 dari rubrik]",
                 "bobot": [Bobot %],
                 "skor": [Skor 0-100],
                 "feedback": "[Ulasan singkat dan spesifik]"
@@ -612,13 +621,56 @@
             submitBtn.disabled = false;
         }
     }
+
+    /**
+     * FUNGSI BARU: Menyimpan Hasil Ujian Siswa (dengan action: 'saveResult')
+     */
+    async function saveResultsToSheet(results, averageScore, answer) {
+        const timestamp = new Date().toISOString();
+        const details = {
+            question: quizState.question.text,
+            answer: answer,
+            assessment: results
+        };
+
+        const dataToSend = {
+            action: 'saveResult', // Kunci baru untuk Apps Script Router
+            timestamp: timestamp,
+            studentName: quizState.studentName,
+            studentClass: quizState.studentClass,
+            subject: currentSettings.examSubject || 'N/A', 
+            averageScore: averageScore,
+            details: details
+        };
+
+        try {
+            const url = currentSettings.appsScriptUrl;
+            if (!url) {
+                showMessage('URL Apps Script tidak ditemukan. Hasil tidak tersimpan online.', 'error');
+                return;
+            }
+
+            const response = await fetch(url, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToSend)
+            });
+
+            showMessage('Hasil ujian berhasil dikirim ke Google Sheet!', 'success');
+
+        } catch (error) {
+            console.error('Error saving to Google Sheet:', error);
+            showMessage('Gagal mengirim hasil ke Google Sheet. Cek URL Apps Script Anda.', 'error');
+        }
+    }
     
     // Function to display results on the page
     function displayResults(results, averageScore, answer) {
         document.getElementById('question-answer-area').classList.add('hidden');
         document.getElementById('result-area').classList.remove('hidden');
         document.getElementById('result-student-name').textContent = quizState.studentName;
-        document.getElementById('result-student-class').textContent = quizState.studentClass; // Tampilkan Kelas
+        document.getElementById('result-student-class').textContent = quizState.studentClass;
         document.getElementById('result-average-score').textContent = averageScore;
 
         const detailsArea = document.getElementById('result-details');
@@ -648,7 +700,7 @@
         // Reset state
         quizState.status = 'initial';
         quizState.studentName = '';
-        quizState.studentClass = ''; // Reset kelas
+        quizState.studentClass = '';
         quizState.startTime = null;
         quizState.elapsedTime = 0;
 
@@ -656,7 +708,7 @@
         document.getElementById('result-area').classList.add('hidden');
         document.getElementById('initial-load-area').classList.remove('hidden');
         document.getElementById('student-name-input').value = '';
-        document.getElementById('student-class-input').value = ''; // Reset input kelas
+        document.getElementById('student-class-input').value = '';
         document.getElementById('student-name-input').focus();
         document.getElementById('question-display').textContent = 'Memuat soal...';
 
@@ -664,50 +716,6 @@
         loadQuizData();
     }
     
-    async function saveResultsToSheet(results, averageScore, answer) {
-        const timestamp = new Date().toISOString();
-        const details = JSON.stringify({
-            question: quizState.question.text,
-            answer: answer,
-            assessment: results
-        });
-
-        const dataToSend = {
-            timestamp: timestamp,
-            studentName: quizState.studentName,
-            studentClass: quizState.studentClass, // Kirim data kelas
-            subject: currentSettings.examSubject || 'N/A', 
-            averageScore: averageScore,
-            details: details
-        };
-
-        try {
-            const url = currentSettings.appsScriptUrl;
-            if (!url) {
-                showMessage('URL Apps Script tidak ditemukan. Hasil tidak tersimpan online.', 'error');
-                return;
-            }
-
-            // Using fetch with 'no-cors' mode is necessary for Apps Script POST requests
-            // We cannot read the response, only confirm success if no network error
-            await fetch(url, {
-                method: 'POST',
-                mode: 'no-cors', 
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(dataToSend)
-            });
-
-            // Since we can't read the response in 'no-cors', assume success if no exception
-            showMessage('Hasil ujian berhasil dikirim ke Google Sheet!', 'success');
-
-        } catch (error) {
-            console.error('Error saving to Google Sheet:', error);
-            showMessage('Gagal mengirim hasil ke Google Sheet. Cek URL Apps Script Anda.', 'error');
-        }
-    }
-
     // --- PDF Generation ---
 
     function downloadResultsAsPDF() {
@@ -730,7 +738,7 @@
         y += 5;
         doc.text(`Nama Siswa: ${quizState.studentName}`, margin, y);
         y += 5;
-        doc.text(`Kelas: ${quizState.studentClass}`, margin, y); // Tambahkan Kelas di PDF
+        doc.text(`Kelas: ${quizState.studentClass}`, margin, y);
         y += 5;
         doc.text(`Skor Rata-rata: ${document.getElementById('result-average-score').textContent}`, margin, y);
         y += 10;
@@ -840,11 +848,157 @@
         doc.save(`Hasil_Ujian_${quizState.studentName}_${quizState.studentClass}.pdf`);
     }
 
-    // --- Generator Functions (Placeholders) ---
-    function generateQuestions() {
-        showMessage('Fungsi Generate Soal belum diimplementasikan.', 'info');
+    // --- Generator Functions (Implementasi) ---
+    let generatedQuestionData = null; // State sementara untuk menyimpan hasil generate AI
+
+    async function generateQuestions() {
+        const promptText = document.getElementById('generator-prompt').value.trim();
+        const outputArea = document.getElementById('generated-question-output');
+        const outputQuestion = document.getElementById('output-question');
+        const outputRubric = document.getElementById('output-rubric');
+        const generateBtn = document.getElementById('generate-questions-btn');
+        outputArea.classList.add('hidden');
+
+        if (!promptText) {
+            showMessage('Instruksi generator harus diisi.', 'error');
+            return;
+        }
+        
+        const originalText = generateBtn.textContent;
+        generateBtn.textContent = 'Membuat Soal... Harap Tunggu.';
+        generateBtn.disabled = true;
+        
+        const systemPrompt = `Anda adalah ahli pembuat soal ujian akademik. Berdasarkan instruksi pengguna, buatkan 1 soal esai dan rubrik penilaiannya. Rubrik harus berisi 3 kriteria spesifik dengan bobot (weight) yang totalnya 100%.
+
+            Struktur Output JSON yang HARUS Anda hasilkan:
+            {
+              "questionText": "[Isi soal esai]",
+              "gradingRubric": [
+                { "criteria": "[Kriteria 1]", "weight": [Bobot %] },
+                { "criteria": "[Kriteria 2]", "weight": [Bobot %] },
+                { "criteria": "[Kriteria 3]", "weight": [Bobot %] }
+              ]
+            }
+        `;
+
+        const payload = {
+            contents: [{ parts: [{ text: `Instruksi: ${promptText}` }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        "questionText": { "type": "STRING" },
+                        "gradingRubric": { 
+                            "type": "ARRAY",
+                            "items": {
+                                "type": "OBJECT",
+                                "properties": {
+                                    "criteria": { "type": "STRING" },
+                                    "weight": { "type": "NUMBER" }
+                                }
+                            }
+                        }
+                    },
+                    "propertyOrdering": ["questionText", "gradingRubric"]
+                }
+            }
+        };
+
+        try {
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            const rawResult = await response.json();
+            const jsonText = rawResult.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            if (!jsonText) throw new Error("Gagal mendapatkan respons JSON dari AI.");
+            
+            const resultData = JSON.parse(jsonText);
+            
+            if (!resultData.questionText || !Array.isArray(resultData.gradingRubric) || resultData.gradingRubric.length === 0) {
+                throw new Error("Struktur soal tidak sesuai format.");
+            }
+
+            // Simpan hasil ke state sementara
+            generatedQuestionData = resultData;
+
+            // Tampilkan di UI
+            outputQuestion.textContent = resultData.questionText;
+            outputRubric.innerHTML = resultData.gradingRubric.map(r => 
+                `<li>${r.criteria} (Bobot: ${r.weight}%)</li>`
+            ).join('');
+            
+            outputArea.classList.remove('hidden');
+            showMessage('Soal esai berhasil dibuat oleh AI!', 'success');
+
+        } catch (error) {
+            console.error("Generator Gagal:", error);
+            showMessage(`Gagal membuat soal: ${error.message}. Cek instruksi Anda.`, 'error');
+        } finally {
+            generateBtn.textContent = originalText;
+            generateBtn.disabled = false;
+        }
     }
-    
+
+    /**
+     * FUNGSI BARU: Menyimpan Soal ke Spreadsheet (dengan action: 'saveQuestion')
+     */
+    async function saveQuestionToSheet() {
+        if (!generatedQuestionData) {
+            showMessage('Tidak ada soal untuk disimpan. Silakan Generate terlebih dahulu.', 'error');
+            return;
+        }
+        
+        const saveBtn = document.getElementById('confirm-save-btn');
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = 'Menyimpan...';
+        saveBtn.disabled = true;
+
+        const dataToSend = {
+            action: 'saveQuestion', // Kunci baru untuk Apps Script Router
+            timestamp: new Date().toISOString(),
+            subject: currentSettings.examSubject || 'N/A', 
+            material: currentSettings.examMaterial || 'N/A',
+            question: generatedQuestionData.questionText,
+            rubric: generatedQuestionData.gradingRubric // Array objek
+        };
+
+        try {
+            const url = currentSettings.appsScriptUrl;
+            if (!url) {
+                showMessage('URL Apps Script tidak ditemukan. Harap atur di Pengaturan Guru.', 'error');
+                return;
+            }
+
+            // Mengirim data ke Apps Script dengan action: 'saveQuestion'
+            await fetch(url, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToSend)
+            });
+
+            showMessage('Soal berhasil disimpan ke Sheet "Soal Ujian"!', 'success');
+            document.getElementById('generated-question-output').classList.add('hidden');
+
+        } catch (error) {
+            console.error('Error saving question to Sheet:', error);
+            showMessage('Gagal menyimpan soal ke Google Sheet. Cek URL Apps Script Anda.', 'error');
+        } finally {
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        }
+    }
+
+
     function createLink() {
         showMessage('Fungsi Generator Link belum diimplementasikan.', 'info');
         const linkOutput = document.getElementById('exam-link-output');
@@ -871,7 +1025,7 @@
     // --- Event Listeners and Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
         const studentNameInput = document.getElementById('student-name-input');
-        const studentClassInput = document.getElementById('student-class-input'); // Ambil input kelas baru
+        const studentClassInput = document.getElementById('student-class-input');
         const startQuizBtn = document.getElementById('start-quiz-btn');
         const submitAnswerBtn = document.getElementById('submit-answer-btn');
         const retakeQuizBtn = document.getElementById('retake-quiz-btn');
@@ -883,7 +1037,7 @@
         const closeSettingsBtn = document.getElementById('close-settings-btn');
         const closeSettingsBtnTop = document.getElementById('close-settings-btn-top');
         const submitPinBtn = document.getElementById('submit-pin-btn');
-        const saveSettingsBtn = document.getElementById('save-settings-btn'); // Updated ID from user input
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
 
         // Tab Navigation
         const tabConfigBtn = document.getElementById('tab-config-btn');
@@ -892,6 +1046,7 @@
         
         // Generator Buttons
         const generateQuestionsBtn = document.getElementById('generate-questions-btn');
+        const confirmSaveBtn = document.getElementById('confirm-save-btn'); // Tombol baru
         const createLinkBtn = document.getElementById('create-link-btn');
         const copyLinkBtn = document.getElementById('copy-link-btn');
 
@@ -902,13 +1057,13 @@
         function checkInputs() {
             const isNameFilled = studentNameInput.value.trim() !== '';
             const isClassFilled = studentClassInput.value.trim() !== '';
-            const isSettingsReady = currentSettings.sheetUrl && currentSettings.appsScriptUrl && quizState.question;
-            startQuizBtn.disabled = !(isNameFilled && isClassFilled && isSettingsReady);
+            const isQuestionReady = !!quizState.question; // Check if question is loaded
+            startQuizBtn.disabled = !(isNameFilled && isClassFilled && isQuestionReady);
         }
 
         // Listeners for Quiz Flow
         studentNameInput.addEventListener('input', checkInputs);
-        studentClassInput.addEventListener('input', checkInputs); // Tambahkan listener untuk input kelas
+        studentClassInput.addEventListener('input', checkInputs);
         
         startQuizBtn.addEventListener('click', startQuiz);
         submitAnswerBtn.addEventListener('click', () => submitAnswer(false));
@@ -921,29 +1076,32 @@
         closeSettingsBtn.addEventListener('click', closeSettingsModal);
         closeSettingsBtnTop.addEventListener('click', closeSettingsModal);
         submitPinBtn.addEventListener('click', checkPin);
-        saveSettingsBtn.addEventListener('click', saveSettings); // Hooked up the save function
+        saveSettingsBtn.addEventListener('click', saveSettings);
 
         // Listeners for Tab Navigation
         tabConfigBtn.addEventListener('click', () => switchTab('config'));
         tabGeneratorBtn.addEventListener('click', () => switchTab('generator'));
         tabLinkGenBtn.addEventListener('click', () => switchTab('link-gen'));
         
-        // Listeners for Generator (Placeholders)
+        // Listeners for Generator (Implementasi)
         generateQuestionsBtn.addEventListener('click', generateQuestions);
+        confirmSaveBtn.addEventListener('click', saveQuestionToSheet); // Hooked up the new save function
+        
+        // Listeners for Link Generator (Placeholders)
         createLinkBtn.addEventListener('click', createLink);
         copyLinkBtn.addEventListener('click', copyLink);
 
         // Listeners for Toolbar
+        const studentAnswerInput = document.getElementById('student-answer-input');
         writingToolbar.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON' && e.target.dataset.char) {
-                const textarea = document.getElementById('student-answer-input');
-                insertAtCursor(textarea, e.target.dataset.char);
+                insertAtCursor(studentAnswerInput, e.target.dataset.char);
             }
         });
 
         // Initialization
         loadSettings();
-        loadQuizData(); // Attempt to load question data based on settings
+        loadQuizData(); 
     });
 </script>
 </body>
