@@ -3,1138 +3,947 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Penilai Esai Siswa</title>
+    <title>Aplikasi Ujian Esai AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- jspdf dan html2canvas untuk PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8;
-            min-height: 100vh;
+            background-color: #f3f4f6;
         }
-        /* Custom styles for better typography and design */
-        .card {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s;
-        }
-        .card:hover {
-            transform: translateY(-2px);
-        }
-        .prose-custom { 
-            max-width: none; 
-            font-size: 1rem; 
-            line-height: 1.6;
-        }
+        .prose-custom { max-width: none; }
         .prose-custom p { margin-top: 0.5em; margin-bottom: 0.5em; }
-        .prose-custom h3 { margin-bottom: 0.5em; font-size: 1.25rem; }
-        
-        /* Scrollbar styling for better look */
+        .prose-custom h3 { margin-bottom: 0.5em; }
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #e2e8f0; }
-        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
 
-        /* Toolbar button styles */
-        .toolbar-btn {
-            @apply px-3 py-1 bg-white border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-100 transition duration-150;
-            font-weight: 500;
-        }
-
-        /* Modal styling */
-        .modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.6);
-        }
-        .tab-button {
-            @apply py-2 px-4 text-sm font-medium border-b-2 transition duration-150;
-        }
+        /* Custom style for active tab button */
         .tab-button.active {
-            @apply border-indigo-600 text-indigo-600;
+            border-bottom-width: 2px;
+            border-color: #2563eb; /* blue-600 */
+            color: #2563eb; /* blue-600 */
         }
-        .tab-button:not(.active) {
-            @apply border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300;
-        }
-
-        /* PDF styling utility classes for jsPDF */
-        .pdf-header { font-size: 16pt; font-weight: 700; color: #1e3a8a; }
-        .pdf-subheader { font-size: 12pt; font-weight: 600; color: #334155; margin-top: 10pt; }
-        .pdf-text { font-size: 10pt; color: #475569; line-height: 1.4; }
-        .pdf-score { font-size: 14pt; font-weight: 700; color: #059669; }
-        .pdf-signature { font-size: 10pt; margin-top: 30pt; }
     </style>
 </head>
-<body class="p-4 sm:p-8">
+<body class="min-h-screen flex flex-col">
 
-    <!-- Header Aplikasi -->
-    <header class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">AI Penilai Esai Siswa</h1>
-        <button id="teacher-settings-btn" class="text-gray-500 hover:text-indigo-600 transition duration-200 p-2 rounded-full bg-white shadow-md" title="Pengaturan Guru">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.525.323 1.045.545 1.724 1.066z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-        </button>
+    <!-- Header / Navbar -->
+    <header class="bg-white shadow-md p-4 flex justify-between items-center z-20">
+        <h1 class="text-xl font-bold text-gray-800">Ujian Esai Interaktif</h1>
+        <div class="flex items-center space-x-3">
+            <button id="teacher-settings-btn" class="bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 text-sm transition duration-150">
+                Pengaturan Guru
+            </button>
+        </div>
     </header>
 
-    <!-- Konten Utama Aplikasi (Dua Mode: Identitas dan Ujian) -->
-    <main id="app-container" class="max-w-4xl mx-auto">
-        
-        <!-- MODE 1: Input Identitas Siswa -->
-        <div id="student-identity-screen" class="card bg-white p-6 sm:p-8 rounded-xl shadow-lg transition duration-300">
-            <h2 class="text-2xl font-semibold text-indigo-700 mb-6">Mulai Ujian</h2>
-            <div class="space-y-4">
-                <div>
-                    <label for="student-name-input" class="block text-sm font-medium text-gray-700 mb-1">Nama Siswa</label>
-                    <input type="text" id="student-name-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Masukkan Nama Lengkap" required>
-                </div>
-                <div>
-                    <label for="student-class-input" class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
-                    <input type="text" id="student-class-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: XII IPA 1" required>
-                </div>
-                <div>
-                    <label for="subject-input" class="block text-sm font-medium text-gray-700 mb-1">Mata Pelajaran Ujian</label>
-                    <input type="text" id="subject-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: Fisika" required>
-                </div>
-            </div>
-            <button id="start-quiz-btn" class="mt-6 w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl hover:bg-indigo-700 transition duration-200 shadow-md transform hover:scale-[1.01]">
-                Mulai Ujian
-            </button>
-            <p id="app-status-message" class="text-center mt-4 text-sm text-red-500 hidden"></p>
-        </div>
+    <!-- Main Content Area -->
+    <main class="flex-grow p-4 md:p-8">
+        <div class="max-w-4xl mx-auto space-y-8">
+            
+            <!-- Message Area -->
+            <div id="message-box" class="hidden p-4 rounded-lg text-sm transition-opacity duration-300 opacity-0"></div>
 
-        <!-- MODE 2: Ujian Berlangsung -->
-        <div id="quiz-screen" class="hidden">
-            <div id="quiz-header" class="card bg-white p-4 mb-6 rounded-xl text-center">
-                <p class="text-lg font-medium text-gray-700">Soal <span id="current-question-index">1</span> dari <span id="total-questions-count">10</span></p>
-                <p class="text-sm text-indigo-600 mt-1" id="quiz-subject-info"></p>
-            </div>
-
-            <div class="card bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                <div id="question-area">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Soal:</h3>
-                    <div id="question-text" class="prose-custom text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-200"></div>
+            <!-- Quiz Information and Input Form -->
+            <div id="quiz-area" class="bg-white p-6 rounded-xl shadow-lg">
+                <div id="quiz-header" class="mb-4">
+                    <p class="text-sm font-medium text-gray-500">Mata Pelajaran: <span id="info-subject" class="font-semibold text-gray-700">Memuat...</span></p>
+                    <p class="text-sm font-medium text-gray-500">Materi: <span id="info-material" class="font-semibold text-gray-700">Memuat...</span></p>
+                    <p class="text-sm font-medium text-gray-500">Durasi: <span id="info-duration" class="font-semibold text-gray-700">--</span> menit</p>
                 </div>
 
-                <div class="mt-8">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Jawaban Anda:</h3>
+                <div id="initial-load-area">
+                    <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">Selamat Datang di Ujian Esai</h2>
+                    <p class="text-center text-gray-600 mb-6">Silakan masukkan nama dan kelas Anda untuk memulai ujian.</p>
+                    <div class="space-y-4">
+                        <input type="text" id="student-name-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Nama Lengkap Siswa" required>
+                        <!-- START: Tambah input Kelas -->
+                        <input type="text" id="student-class-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Kelas (Contoh: IX A / 9A)" required>
+                        <!-- END: Tambah input Kelas -->
+                    </div>
+                    <button id="start-quiz-btn" class="mt-4 w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition duration-150" disabled>Mulai Ujian</button>
+                </div>
+
+                <!-- Question and Answer Area (Hidden initially) -->
+                <div id="question-answer-area" class="hidden">
+                    <div id="timer-display" class="text-xl font-bold text-red-600 mb-4 text-center"></div>
+
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Soal Ujian:</h3>
+                    <div id="question-display" class="prose prose-custom max-w-full p-4 mb-4 border border-gray-200 rounded-lg bg-gray-50 text-gray-800" style="white-space: pre-wrap;">Memuat soal...</div>
+
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Jawaban Anda:</h3>
                     
-                    <!-- Toolbar Alat Tulis -->
-                    <div id="writing-toolbar" class="flex flex-wrap gap-2 mb-2 p-2 bg-gray-100 rounded-lg border border-gray-200">
-                        <span class="text-sm font-medium text-gray-600 mr-2">Alat Tulis:</span>
-                        <button type="button" class="toolbar-btn" data-char="^2">x²</button>
-                        <button type="button" class="toolbar-btn" data-char="^{}">xⁿ</button>
-                        <button type="button" class="toolbar-btn" data-char="√">√x</button>
-                        <button type="button" class="toolbar-btn" data-char=" / ">÷</button>
-                        <button type="button" class="toolbar-btn" data-char=" * ">×</button>
-                        <button type="button" class="toolbar-btn" data-char=" -> " title="Simbol panah untuk reaksi/aliran">→</button>
-                        <button type="button" class="toolbar-btn" data-char=" ≈ ">≈</button>
-                        <button type="button" class="toolbar-btn" data-char=" ≠ ">≠</button>
-                        <button type="button" class="toolbar-btn" data-char="∑">∑</button>
+                    <!-- Writing Toolbar -->
+                    <div id="writing-toolbar" class="flex flex-wrap gap-2 p-2 bg-gray-100 rounded-t-lg border-b border-gray-200">
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char="~">~</button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char="^">^</button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char="_">_</button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char="<"><</button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char=">">></button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char="/">/</button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char="\">\</button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char="(">(</button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char=")">)</button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char="[">[</button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char="]">]</button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char="{">{</button>
+                        <button class="text-xs bg-white text-gray-700 p-1 rounded-md border hover:bg-gray-200" data-char="}">}</button>
                     </div>
 
-                    <textarea id="student-answer-input" rows="8" class="w-full p-4 border-2 border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-inner" placeholder="Tuliskan jawaban esai Anda di sini..."></textarea>
+                    <textarea id="student-answer-input" rows="10" class="w-full px-4 py-2 border border-gray-300 rounded-b-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Tulis jawaban esai Anda di sini..."></textarea>
                     
-                    <button id="submit-answer-btn" class="mt-4 w-full bg-green-600 text-white font-semibold py-3 rounded-xl hover:bg-green-700 transition duration-200 shadow-md">
-                        Kirim Jawaban dan Koreksi Otomatis
-                    </button>
+                    <button id="submit-answer-btn" class="mt-4 w-full bg-green-600 text-white font-semibold py-2 rounded-lg hover:bg-green-700 transition duration-150">Selesaikan Ujian & Nilai Jawaban</button>
                 </div>
-            </div>
-
-            <!-- Area Umpan Balik / Koreksi AI -->
-            <div id="feedback-area" class="card bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg mt-6 hidden">
-                <h4 class="text-lg font-semibold text-yellow-800 mb-2">Umpan Balik AI:</h4>
-                <div id="ai-score" class="text-2xl font-bold text-green-700 mb-2"></div>
-                <div id="ai-feedback-text" class="text-sm text-yellow-800"></div>
-                <button id="next-question-btn" class="mt-4 bg-indigo-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-600 transition duration-200">
-                    Lanjut ke Soal Berikutnya
-                </button>
-            </div>
-        </div>
-
-        <!-- MODE 3: Hasil Akhir -->
-        <div id="results-screen" class="hidden card bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-            <h2 class="text-3xl font-bold text-indigo-700 mb-4 text-center">Hasil Ujian Anda</h2>
-            <div class="border-t border-gray-200 pt-4 space-y-3">
-                <p class="text-lg text-gray-700"><span class="font-medium">Nama:</span> <span id="result-student-name"></span></p>
-                <p class="text-lg text-gray-700"><span class="font-medium">Mata Pelajaran:</span> <span id="result-subject"></span></p>
-                <p class="text-lg text-gray-700"><span class="font-medium">Kelas:</span> <span id="result-class"></span></p>
-                <p class="text-lg text-gray-700"><span class="font-medium">Total Soal:</span> <span id="result-total-questions"></span></p>
-            </div>
-
-            <div class="text-center mt-6 p-4 bg-indigo-50 rounded-xl border border-indigo-200">
-                <p class="text-xl text-indigo-700 font-semibold">Skor Rata-rata Akhir:</p>
-                <p id="final-average-score" class="text-5xl font-extrabold text-indigo-600 mt-1">--</p>
-            </div>
-
-            <h3 class="text-xl font-semibold text-gray-800 mt-8 mb-4">Rincian Koreksi Per Soal:</h3>
-            <div id="results-detail-list" class="space-y-4 max-h-96 overflow-y-auto pr-2">
-                <!-- Rincian soal akan diisi di sini -->
-            </div>
-
-            <div class="mt-8 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <button id="download-pdf-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-700 transition duration-200 shadow-md">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                    Unduh Hasil (PDF)
-                </button>
-                <button id="retake-quiz-btn" class="bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-xl hover:bg-gray-400 transition duration-200 shadow-md">
-                    Ulangi Ujian
-                </button>
-            </div>
-        </div>
-    </main>
-    
-    <!-- LOADING SPINNER MODAL -->
-    <div id="loading-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70 hidden">
-        <div class="bg-white p-6 rounded-lg shadow-xl flex items-center">
-            <svg class="animate-spin -ml-1 mr-3 h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span id="loading-text" class="text-gray-700 font-medium">Memuat Soal...</span>
-        </div>
-    </div>
-
-    <!-- MODAL PENGATURAN GURU -->
-    <div id="settings-backdrop" class="fixed inset-0 z-40 bg-gray-900 bg-opacity-50 hidden"></div>
-    <div id="settings-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-4xl p-4 hidden">
-        <div class="bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center p-5 border-b border-gray-200 sticky top-0 bg-white z-10 rounded-t-xl">
-                <h3 class="text-2xl font-bold text-indigo-700">Pengaturan Guru</h3>
-                <button id="close-settings-btn" class="text-gray-400 hover:text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
             </div>
             
-            <!-- Tab Navigation -->
-            <div class="flex border-b border-gray-200 px-5 bg-gray-50">
-                <button id="tab-config-btn" data-tab="config" class="tab-button active">Konfigurasi & Koneksi</button>
-                <button id="tab-generator-btn" data-tab="generator" class="tab-button">Generator Soal AI</button>
-                <button id="tab-link-gen-btn" data-tab="link-gen" class="tab-button">Generator Link</button>
+            <!-- Result Area (Hidden initially) -->
+            <div id="result-area" class="hidden bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">Hasil Penilaian Ujian</h2>
+                
+                <div id="score-summary" class="bg-blue-50 p-4 rounded-lg mb-6 border-l-4 border-blue-600">
+                    <p class="text-lg font-medium text-gray-800">Nama Siswa: <span id="result-student-name" class="font-bold"></span></p>
+                    <!-- START: Tampilkan Kelas di Hasil -->
+                    <p class="text-lg font-medium text-gray-800">Kelas: <span id="result-student-class" class="font-bold"></span></p>
+                    <!-- END: Tampilkan Kelas di Hasil -->
+                    <p class="text-lg font-medium text-gray-800">Skor Rata-rata: <span id="result-average-score" class="font-bold text-blue-600">--</span></p>
+                    <p class="text-sm text-gray-600 mt-2">Penilaian ini bersifat otomatis menggunakan model AI. Harap tinjau kembali.</p>
+                </div>
+                
+                <div id="result-details" class="space-y-4">
+                    <!-- Detail hasil penilaian akan dimasukkan di sini oleh JS -->
+                </div>
+                
+                <div class="mt-6 flex justify-between space-x-4">
+                    <button id="download-pdf-btn" class="bg-red-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-700 transition duration-150 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L10 11.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v7a1 1 0 11-2 0V3a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                        Unduh PDF
+                    </button>
+                    <button id="retake-quiz-btn" class="bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg hover:bg-gray-400 transition duration-150">
+                        Ulangi Ujian
+                    </button>
+                </div>
             </div>
 
-            <div class="p-6">
-                
-                <!-- Tab Content 1: Konfigurasi & Koneksi -->
-                <div id="tab-content-config" data-tab-content="config">
-                    <h4 class="text-xl font-semibold text-gray-800 mb-4">Pengaturan Dasar</h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="teacher-name-input" class="block text-sm font-medium text-gray-700 mb-1">Nama Guru Mata Pelajaran</label>
-                            <input type="text" id="teacher-name-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: Budi Santoso, S.Pd.">
-                        </div>
-                        <div>
-                            <label for="quiz-topic-input" class="block text-sm font-medium text-gray-700 mb-1">Materi Ujian Saat Ini</label>
-                            <input type="text" id="quiz-topic-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: Rangkuman Materi Fotosintesis">
-                            <p class="text-xs text-gray-500 mt-1">Ini akan muncul di halaman hasil ujian siswa.</p>
-                        </div>
-                        <div>
-                            <label for="quiz-duration-input" class="block text-sm font-medium text-gray-700 mb-1">Durasi Ujian (dalam menit)</label>
-                            <input type="number" id="quiz-duration-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" value="60">
-                            <p class="text-xs text-red-500 mt-1">Catatan: Fitur ini belum berfungsi sebagai timer, hanya sebagai informasi di PDF.</p>
-                        </div>
-                    </div>
+        </div>
+    </main>
 
-                    <h4 class="text-xl font-semibold text-gray-800 mt-8 mb-4">Koneksi Google (Sistem Proxy Aman)</h4>
-                    <div class="space-y-4">
-                        <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                             <p class="font-bold">Keamanan Maksimal:</p> API Key Gemini TIDAK lagi diisi di sini. Key Anda harus diisi di dalam kode Google Apps Script (Server Proxy) untuk keamanan data.
-                        </div>
-                        <div>
-                            <label for="sheet-url-input" class="block text-sm font-medium text-gray-700 mb-1">URL Google Sheet (Sumber Soal & Hasil)</label>
-                            <input type="url" id="sheet-url-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: https://docs.google.com/spreadsheets/d/ID_SPREADSHEET_ANDA/edit">
-                            <p class="text-xs text-gray-500 mt-1">Pastikan Sheet sudah di-**Publish ke web** dan setelan **Share** diatur "Siapa saja yang memiliki link".</p>
-                        </div>
-                        <div>
-                            <label for="apps-script-url-input" class="block text-sm font-medium text-gray-700 mb-1">URL Google Apps Script (Server Proxy)</label>
-                            <input type="url" id="apps-script-url-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Tempel URL Deployment Apps Script Anda di sini">
-                        </div>
-                        <button id="test-connection-btn" class="w-full bg-yellow-500 text-white font-semibold py-2 rounded-lg hover:bg-yellow-600 transition duration-200">Uji Koneksi Apps Script</button>
-                    </div>
+    <!-- Settings Modal (Hidden initially) -->
+    <div id="settings-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div id="settings-backdrop" class="absolute inset-0"></div>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 relative z-10 mx-4" style="max-height: 90vh; overflow-y: auto;">
+            <h2 class="text-2xl font-bold mb-4">Pengaturan Guru</h2>
+            
+            <!-- Close Button -->
+            <button id="close-settings-btn-top" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
 
-                    <button id="save-settings-btn" class="mt-8 w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl hover:bg-indigo-700 transition duration-200">
-                        Simpan Pengaturan
-                    </button>
+            <!-- PIN Input Area (Default View) -->
+            <div id="pin-input-area">
+                <p class="text-gray-600 mb-4">Masukkan PIN untuk mengakses pengaturan. (PIN default: **1234**)</p>
+                <input type="password" id="pin-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-4" placeholder="Masukkan PIN">
+                <button id="submit-pin-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 rounded-lg hover:bg-indigo-700 transition duration-150">Akses Pengaturan</button>
+            </div>
+
+            <!-- Settings Tabs Area (Hidden until PIN correct) -->
+            <div id="settings-tabs-area" class="hidden">
+                <!-- Tabs Navigation -->
+                <div class="flex border-b mb-4">
+                    <button id="tab-config-btn" class="tab-button active px-4 py-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600 hover:text-blue-700 transition duration-150" data-tab="config">Konfigurasi</button>
+                    <button id="tab-generator-btn" class="tab-button px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition duration-150" data-tab="generator">Generator Soal</button>
+                    <button id="tab-link-gen-btn" class="tab-button px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition duration-150" data-tab="link-gen">Generator Link</button>
                 </div>
 
-                <!-- Tab Content 2: Generator Soal AI -->
-                <div id="tab-content-generator" data-tab-content="generator" class="hidden">
-                    <h4 class="text-xl font-semibold text-indigo-700 mb-4">Generator Soal Esai Otomatis</h4>
-                    <div class="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-                        <p class="font-medium">Cara Kerja:</p>
-                        <ul class="list-disc list-inside mt-1">
-                            <li>AI (Gemini) akan membuat Soal dan Kunci Jawaban (Rubrik) dari prompt Anda.</li>
-                            <li>Hasilnya akan **langsung disimpan** ke tab **'Soal'** di Google Sheet Anda.</li>
-                            <li>API Key Anda aman di Apps Script.</li>
-                        </ul>
+                <!-- Tab Content Container -->
+                <div id="tab-content-container">
+                    
+                    <!-- Konfigurasi Tab Content (Updated as requested) -->
+                    <div id="tab-config-content" class="tab-content" style="display: block;">
+                        <!-- Konten Tab Konfigurasi -->
+                        <div class="space-y-4">
+                            <div>
+                                <label for="teacher-name" class="block text-sm font-medium text-gray-700">Nama Guru (untuk PDF)</label>
+                                <input type="text" id="teacher-name" class="mt-1 w-full px-3 py-2 border rounded-md" placeholder="Contoh: Budi Santoso, S.Pd.">
+                            </div>
+                            <div>
+                                <label for="config-exam-subject" class="block text-sm font-medium text-gray-700">Mata Pelajaran Ujian</label>
+                                <input type="text" id="config-exam-subject" class="mt-1 w-full px-3 py-2 border rounded-md" placeholder="Contoh: Bahasa Indonesia">
+                            </div>
+                            <div>
+                                <label for="config-exam-material" class="block text-sm font-medium text-gray-700">Materi Ujian</label>
+                                <input type="text" id="config-exam-material" class="mt-1 w-full px-3 py-2 border rounded-md" placeholder="Contoh: Teks Prosedur">
+                            </div>
+                            <div>
+                                <label for="config-exam-duration" class="block text-sm font-medium text-gray-700">Durasi Ujian (menit)</label>
+                                <input type="number" id="config-exam-duration" class="mt-1 w-full px-3 py-2 border rounded-md" placeholder="Contoh: 90">
+                            </div>
+                            <div>
+                                <label for="sheet-url" class="block text-sm font-medium text-gray-700">URL Google Sheet (Untuk Soal)</label>
+                                <input type="text" id="sheet-url" class="mt-1 w-full px-3 py-2 border rounded-md" placeholder="https://docs.google.com/spreadsheets/d/.../edit">
+                            </div>
+                            <div>
+                                <label for="apps-script-url" class="block text-sm font-medium text-gray-700">URL Google Apps Script (Hasil & Soal)</label>
+                                <input type="text" id="apps-script-url" class="mt-1 w-full px-3 py-2 border rounded-md" placeholder="https://script.google.com/macros/s/.../exec">
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end space-x-3">
+                            <button id="save-settings-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-150">Simpan Pengaturan Lokal</button>
+                        </div>
                     </div>
-                    <div>
-                        <label for="generator-prompt" class="block text-sm font-medium text-gray-700 mb-1">Prompt/Perintah untuk AI</label>
-                        <textarea id="generator-prompt" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Contoh: Buatkan 5 soal esai analisis tentang dampak Revolusi Industri 4.0 dan kunci jawabannya yang mendalam."></textarea>
+                    
+                    <!-- Generator Tab Content (Placeholder) -->
+                    <div id="tab-generator-content" class="tab-content p-4 border rounded-lg bg-gray-50" style="display: none;">
+                        <h3 class="text-xl font-semibold mb-3">Generator Soal (Belum Aktif)</h3>
+                        <p class="text-gray-600">Fitur ini akan memungkinkan Anda membuat soal esai baru menggunakan AI berdasarkan mata pelajaran dan materi yang Anda tentukan.</p>
+                        <textarea id="generator-prompt" rows="4" class="w-full mt-3 px-3 py-2 border rounded-md" placeholder="Masukkan instruksi untuk soal esai (Contoh: Buatkan 3 soal esai tentang 'Teks Prosedur' untuk siswa kelas 7)."></textarea>
+                        <button id="generate-questions-btn" class="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition duration-150 w-full">Generate Soal</button>
                     </div>
-                    <button id="generate-questions-btn" class="mt-4 w-full bg-green-600 text-white font-semibold py-3 rounded-xl hover:bg-green-700 transition duration-200">
-                        <span id="generate-questions-text">Generate & Simpan Soal ke Sheet</span>
-                        <svg id="generate-questions-spinner" class="animate-spin h-5 w-5 text-white inline ml-2 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    </button>
-                </div>
 
-                <!-- Tab Content 3: Generator Link -->
-                <div id="tab-content-link-gen" data-tab-content="link-gen" class="hidden">
-                    <h4 class="text-xl font-semibold text-indigo-700 mb-4">Bagikan Pengaturan ke Guru Lain</h4>
-                    <p class="text-gray-700 mb-4">Fitur ini memungkinkan Anda membagikan semua pengaturan koneksi (URL Sheet, URL Apps Script, dll.) ke guru lain tanpa mengungkapkan PIN Guru Anda.</p>
-                    <button id="create-link-btn" class="w-full bg-indigo-500 text-white font-semibold py-3 rounded-xl hover:bg-indigo-600 transition duration-200">
-                        Buat Link Berbagi Pengaturan
-                    </button>
-                    <div id="generated-link-area" class="mt-6 hidden">
-                        <label for="generated-link" class="block text-sm font-medium text-gray-700 mb-1">Link Berbagi (Salin dan Bagikan)</label>
-                        <div class="flex">
-                            <input type="text" id="generated-link" class="flex-grow px-4 py-2 border border-gray-300 rounded-l-lg bg-gray-50 cursor-text" readonly>
-                            <button id="copy-link-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-r-lg hover:bg-indigo-700 transition duration-200" title="Salin Link">
-                                Salin
-                            </button>
+                    <!-- Link Generator Tab Content (Placeholder) -->
+                    <div id="tab-link-gen-content" class="tab-content p-4 border rounded-lg bg-gray-50" style="display: none;">
+                        <h3 class="text-xl font-semibold mb-3">Generator Link Ujian (Belum Aktif)</h3>
+                        <p class="text-gray-600">Fitur ini akan menghasilkan URL ujian unik untuk dibagikan kepada siswa.</p>
+                        <input type="text" id="exam-link-output" class="mt-3 w-full px-3 py-2 border rounded-md bg-gray-200" readonly placeholder="Link akan muncul di sini">
+                        <div class="mt-4 flex space-x-3">
+                            <button id="create-link-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-150 flex-grow">Buat Link Ujian</button>
+                            <button id="copy-link-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-150" disabled>Salin</button>
                         </div>
                     </div>
                 </div>
 
-                <div id="settings-status-message" class="mt-4 text-sm text-center font-medium"></div>
-
+                <div class="mt-6 flex justify-end">
+                    <button id="close-settings-btn" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition duration-150">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-    // Konstanta Aplikasi
+<script>
+    // Konfigurasi default dan state
     const DEFAULT_PIN = "1234";
-
-    // State Aplikasi
-    let currentQuestionIndex = 0;
-    let questions = [];
-    let studentResults = [];
-    let appSettings = {};
-    let studentIdentity = {};
-    let isSubmitting = false;
-
-    // Elemen DOM
-    const studentIdentityScreen = document.getElementById('student-identity-screen');
-    const quizScreen = document.getElementById('quiz-screen');
-    const resultsScreen = document.getElementById('results-screen');
-    const questionText = document.getElementById('question-text');
-    const studentAnswerInput = document.getElementById('student-answer-input');
-    const submitAnswerBtn = document.getElementById('submit-answer-btn');
-    const nextQuestionBtn = document.getElementById('next-question-btn');
-    const feedbackArea = document.getElementById('feedback-area');
-    const loadingModal = document.getElementById('loading-modal');
-    const loadingText = document.getElementById('loading-text');
-    const appStatusMessage = document.getElementById('app-status-message');
-    const teacherSettingsBtn = document.getElementById('teacher-settings-btn');
-    const settingsModal = document.getElementById('settings-modal');
-    const settingsBackdrop = document.getElementById('settings-backdrop');
-    const closeSettingsBtn = document.getElementById('close-settings-btn');
-    const submitPinBtn = document.getElementById('submit-pin-btn');
-    const saveSettingsBtn = document.getElementById('save-settings-btn');
-    const settingsStatusMessage = document.getElementById('settings-status-message');
-    const generateQuestionsBtn = document.getElementById('generate-questions-btn');
-    const generateQuestionsText = document.getElementById('generate-questions-text');
-    const generateQuestionsSpinner = document.getElementById('generate-questions-spinner');
-    const writingToolbar = document.getElementById('writing-toolbar');
-    
-    // Elemen Tab Pengaturan
-    const tabConfigBtn = document.getElementById('tab-config-btn');
-    const tabGeneratorBtn = document.getElementById('tab-generator-btn');
-    const tabLinkGenBtn = document.getElementById('tab-link-gen-btn');
-    const tabContents = {
-        'config': document.getElementById('tab-content-config'),
-        'generator': document.getElementById('tab-content-generator'),
-        'link-gen': document.getElementById('tab-content-link-gen')
+    let currentSettings = {};
+    let quizState = {
+        status: 'initial', // 'initial', 'in-progress', 'finished'
+        question: null,
+        studentName: '',
+        studentClass: '', // Tambah state untuk Kelas Siswa
+        startTime: null,
+        timerInterval: null,
+        elapsedTime: 0,
     };
-    const createLinkBtn = document.getElementById('create-link-btn');
-    const copyLinkBtn = document.getElementById('copy-link-btn');
-    const generatedLinkInput = document.getElementById('generated-link');
-    const generatedLinkArea = document.getElementById('generated-link-area');
-    const testConnectionBtn = document.getElementById('test-connection-btn');
+    
+    // --- Utils ---
 
-    // --- UTILITIES ---
-
-    /** Menampilkan/menyembunyikan modal loading */
-    function showLoading(message) {
-        loadingText.textContent = message;
-        loadingModal.classList.remove('hidden');
-    }
-
-    function hideLoading() {
-        loadingModal.classList.add('hidden');
-    }
-
-    /** Menampilkan pesan di layar Identitas Siswa */
-    function showAppStatus(message, isError = true) {
-        appStatusMessage.textContent = message;
-        appStatusMessage.classList.remove('hidden');
-        if (isError) {
-            appStatusMessage.classList.remove('text-green-500');
-            appStatusMessage.classList.add('text-red-500');
-        } else {
-            appStatusMessage.classList.remove('text-red-500');
-            appStatusMessage.classList.add('text-green-500');
-        }
-    }
-
-    function hideAppStatus() {
-        appStatusMessage.classList.add('hidden');
-    }
-
-    /** Menyisipkan karakter ke kursor textarea */
-    function insertAtCursor(input, char) {
-        const start = input.selectionStart;
-        const end = input.selectionEnd;
-        const value = input.value;
-        input.value = value.substring(0, start) + char + value.substring(end);
-        input.selectionStart = input.selectionEnd = start + char.length;
-        input.focus();
-    }
-
-    /** Mengambil ID Spreadsheet dari URL */
-    function getSpreadsheetId(url) {
-        const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-        return match ? match[1] : null;
-    }
-
-    // --- PENGATURAN GURU (LOCAL STORAGE) ---
-
-    function loadSettings() {
-        const storedSettings = localStorage.getItem('ai_quiz_settings');
-        if (storedSettings) {
-            try {
-                appSettings = JSON.parse(storedSettings);
-                document.getElementById('teacher-name-input').value = appSettings.teacherName || '';
-                document.getElementById('quiz-topic-input').value = appSettings.quizTopic || '';
-                document.getElementById('quiz-duration-input').value = appSettings.quizDuration || 60;
-                document.getElementById('sheet-url-input').value = appSettings.sheetUrl || '';
-                document.getElementById('apps-script-url-input').value = appSettings.appsScriptUrl || '';
-            } catch (e) {
-                console.error("Gagal memuat pengaturan dari Local Storage:", e);
-                appSettings = {};
-            }
-        }
-
-        // Cek link berbagi
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('config')) {
-            try {
-                const decodedConfig = atob(urlParams.get('config'));
-                const sharedSettings = JSON.parse(decodedConfig);
-                
-                // Terapkan pengaturan bersama jika tidak ada yang tersimpan atau diminta
-                if (confirm("Seorang guru telah berbagi pengaturan ujian. Apakah Anda ingin menerapkan pengaturan ini? (Ini akan menimpa pengaturan Anda saat ini)")) {
-                    appSettings = { ...appSettings, ...sharedSettings };
-                    saveSettings(false); // Simpan tanpa notifikasi
-                    window.location.href = window.location.pathname; // Hapus parameter config
-                }
-            } catch (e) {
-                alert("Gagal memuat konfigurasi berbagi.");
-                window.location.href = window.location.pathname; // Hapus parameter config
-            }
-        }
-    }
-
-    function saveSettings(showAlert = true) {
-        appSettings.teacherName = document.getElementById('teacher-name-input').value;
-        appSettings.quizTopic = document.getElementById('quiz-topic-input').value;
-        appSettings.quizDuration = document.getElementById('quiz-duration-input').value;
-        appSettings.sheetUrl = document.getElementById('sheet-url-input').value;
-        appSettings.appsScriptUrl = document.getElementById('apps-script-url-input').value;
-
-        localStorage.setItem('ai_quiz_settings', JSON.stringify(appSettings));
+    // Generic Message Box
+    function showMessage(message, type = 'info') {
+        const box = document.getElementById('message-box');
+        box.textContent = message;
+        box.className = `p-4 rounded-lg text-sm transition-opacity duration-300 opacity-100 mt-4`;
         
-        if (showAlert) {
-             settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-green-600';
-             settingsStatusMessage.textContent = 'Pengaturan berhasil disimpan!';
-             setTimeout(() => settingsStatusMessage.textContent = '', 3000);
+        if (type === 'error') {
+            box.classList.add('bg-red-100', 'text-red-700');
+        } else if (type === 'success') {
+            box.classList.add('bg-green-100', 'text-green-700');
+        } else { // info
+            box.classList.add('bg-blue-100', 'text-blue-700');
+        }
+
+        box.style.display = 'block';
+        setTimeout(() => {
+            box.classList.remove('opacity-100');
+            box.classList.add('opacity-0');
+            setTimeout(() => box.style.display = 'none', 300);
+        }, 5000);
+    }
+    
+    // Timer functions
+    function formatTime(seconds) {
+        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+        const secs = String(seconds % 60).padStart(2, '0');
+        return `${mins}:${secs}`;
+    }
+
+    function startTimer() {
+        if (quizState.timerInterval) clearInterval(quizState.timerInterval);
+
+        const totalSeconds = currentSettings.examDuration * 60;
+        quizState.elapsedTime = 0;
+
+        const timerDisplay = document.getElementById('timer-display');
+        timerDisplay.textContent = formatTime(totalSeconds);
+
+        quizState.timerInterval = setInterval(() => {
+            quizState.elapsedTime++;
+            const remainingTime = totalSeconds - quizState.elapsedTime;
+
+            if (remainingTime <= 0) {
+                clearInterval(quizState.timerInterval);
+                timerDisplay.textContent = "WAKTU HABIS!";
+                submitAnswer(true); // Auto submit when time is up
+            } else {
+                timerDisplay.textContent = formatTime(remainingTime);
+            }
+        }, 1000);
+    }
+    
+    function stopTimer() {
+        if (quizState.timerInterval) {
+            clearInterval(quizState.timerInterval);
+            quizState.timerInterval = null;
         }
     }
 
-    // --- MODAL PENGATURAN & PIN ---
+    // Function to insert character at cursor in textarea
+    function insertAtCursor(textarea, char) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const value = textarea.value;
+        
+        textarea.value = value.substring(0, start) + char + value.substring(end);
+        textarea.selectionStart = textarea.selectionEnd = start + char.length;
+        textarea.focus();
+    }
+
+
+    // --- Settings Functions ---
 
     function openSettingsModal() {
-        // Tampilkan modal pin terlebih dahulu jika belum login
-        const pinModal = document.getElementById('pin-modal') || createPinModal();
-        settingsModal.classList.add('hidden'); // Sembunyikan settings modal utama
-        pinModal.classList.remove('hidden');
-        settingsBackdrop.classList.remove('hidden');
-    }
-    
-    function closeSettingsModal() {
-        settingsModal.classList.add('hidden');
-        settingsBackdrop.classList.add('hidden');
-        document.getElementById('pin-modal')?.classList.add('hidden'); // Sembunyikan juga pin modal
-        settingsStatusMessage.textContent = ''; // Bersihkan pesan status
+        document.getElementById('settings-modal').classList.remove('hidden');
+        document.getElementById('pin-input-area').classList.remove('hidden');
+        document.getElementById('settings-tabs-area').classList.add('hidden');
+        document.getElementById('pin-input').value = '';
+        document.getElementById('pin-input').focus();
     }
 
-    function createPinModal() {
-        const modalHtml = `
-            <div id="pin-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-sm p-4">
-                <div class="bg-white rounded-xl shadow-2xl p-6">
-                    <h3 class="text-xl font-bold text-red-700 mb-4">Akses Guru Terbatas</h3>
-                    <p class="text-sm text-gray-600 mb-3">Masukkan PIN Guru untuk mengakses pengaturan. PIN default: ${DEFAULT_PIN}</p>
-                    <input type="password" id="pin-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" placeholder="PIN Rahasia">
-                    <button id="submit-pin-btn" class="mt-4 w-full bg-red-600 text-white font-semibold py-2 rounded-xl hover:bg-red-700 transition duration-200">
-                        Masuk
-                    </button>
-                    <p id="pin-error-message" class="text-center mt-3 text-sm text-red-500 hidden"></p>
-                </div>
-            </div>
-        `;
-        const pinModalContainer = document.createElement('div');
-        pinModalContainer.innerHTML = modalHtml;
-        document.body.appendChild(pinModalContainer.firstChild);
-        document.getElementById('submit-pin-btn').addEventListener('click', checkPin);
-        return document.getElementById('pin-modal');
+    function closeSettingsModal() {
+        document.getElementById('settings-modal').classList.add('hidden');
     }
 
     function checkPin() {
-        const pinInput = document.getElementById('pin-input');
-        const pinErrorMessage = document.getElementById('pin-error-message');
-        const enteredPin = pinInput.value;
-
-        if (enteredPin === DEFAULT_PIN) {
-            document.getElementById('pin-modal').classList.add('hidden');
-            settingsModal.classList.remove('hidden');
-            // Pastikan tab config yang aktif saat pertama masuk
-            switchTab('config');
+        const pinInput = document.getElementById('pin-input').value;
+        if (pinInput === DEFAULT_PIN) {
+            document.getElementById('pin-input-area').classList.add('hidden');
+            document.getElementById('settings-tabs-area').classList.remove('hidden');
+            // Load settings into the form when settings area is opened
+            loadSettings(); 
         } else {
-            pinErrorMessage.textContent = "PIN salah. Silakan coba lagi.";
-            pinErrorMessage.classList.remove('hidden');
-            pinInput.value = '';
+            showMessage('PIN salah. Akses ditolak.', 'error');
+            document.getElementById('pin-input').value = '';
+        }
+    }
+    
+    // Function to save settings to localStorage
+    function saveSettings() {
+        const teacherName = document.getElementById('teacher-name').value;
+        const subject = document.getElementById('config-exam-subject').value;
+        const material = document.getElementById('config-exam-material').value;
+        const duration = document.getElementById('config-exam-duration').value;
+        const sheetUrl = document.getElementById('sheet-url').value;
+        const appsScriptUrl = document.getElementById('apps-script-url').value;
+        
+        // Validate required fields
+        if (!sheetUrl || !appsScriptUrl) {
+            showMessage('URL Google Sheet dan URL Apps Script wajib diisi.', 'error');
+            return;
+        }
+
+        const settings = {
+            teacherName: teacherName,
+            examSubject: subject,
+            examMaterial: material,
+            examDuration: parseInt(duration) || 90, // Default to 90 minutes
+            sheetUrl: sheetUrl,
+            appsScriptUrl: appsScriptUrl,
+        };
+
+        localStorage.setItem('guruSettings', JSON.stringify(settings));
+        showMessage('Pengaturan lokal berhasil disimpan!', 'success');
+        
+        // Update global settings and UI info
+        currentSettings = settings;
+        updateQuizHeaderInfo();
+        
+        closeSettingsModal();
+
+        // Re-initialize quiz data if subject/material/sheet changed
+        if (quizState.status === 'initial') {
+            loadQuizData();
+        }
+    }
+
+    // Function to load settings from localStorage
+    function loadSettings() {
+        const settingsString = localStorage.getItem('guruSettings');
+        let settings;
+
+        if (settingsString) {
+            settings = JSON.parse(settingsString);
+            
+            // Update input fields in modal
+            document.getElementById('teacher-name').value = settings.teacherName || '';
+            document.getElementById('config-exam-subject').value = settings.examSubject || '';
+            document.getElementById('config-exam-material').value = settings.examMaterial || '';
+            document.getElementById('config-exam-duration').value = settings.examDuration || 90;
+            document.getElementById('sheet-url').value = settings.sheetUrl || '';
+            document.getElementById('apps-script-url').value = settings.appsScriptUrl || '';
+
+            currentSettings = settings;
+
+        } else {
+            // Use default/empty settings if none found
+            currentSettings = {
+                teacherName: 'Nama Guru Anda',
+                examSubject: 'Mata Pelajaran Ujian',
+                examMaterial: 'Materi Ujian',
+                examDuration: 90,
+                sheetUrl: '',
+                appsScriptUrl: '',
+            };
+        }
+        updateQuizHeaderInfo();
+    }
+    
+    function updateQuizHeaderInfo() {
+        document.getElementById('info-subject').textContent = currentSettings.examSubject || 'Belum diatur';
+        document.getElementById('info-material').textContent = currentSettings.examMaterial || 'Belum diatur';
+        document.getElementById('info-duration').textContent = currentSettings.examDuration || '--';
+
+        const startBtn = document.getElementById('start-quiz-btn');
+        if (currentSettings.sheetUrl && currentSettings.appsScriptUrl) {
+            startBtn.disabled = false;
+        } else {
+            startBtn.disabled = true;
+            showMessage('Harap atur URL Google Sheet dan Apps Script di Pengaturan Guru (Pin: 1234) untuk memuat soal.', 'info');
         }
     }
 
     function switchTab(tabId) {
-        const tabs = [tabConfigBtn, tabGeneratorBtn, tabLinkGenBtn];
-        tabs.forEach(tab => {
-            tab.classList.remove('active');
-            if (tab.dataset.tab === tabId) {
-                tab.classList.add('active');
-            }
+        const tabContents = document.querySelectorAll('.tab-content');
+        const tabButtons = document.querySelectorAll('.tab-button');
+
+        tabContents.forEach(content => {
+            content.style.display = 'none';
         });
 
-        const contents = Object.values(tabContents);
-        contents.forEach(content => {
-            content.classList.add('hidden');
-            if (content.dataset.tabContent === tabId) {
-                content.classList.remove('hidden');
-            }
+        tabButtons.forEach(button => {
+            button.classList.remove('active', 'border-blue-600', 'text-blue-600');
+            button.classList.add('text-gray-500', 'hover:text-gray-700');
         });
-        settingsStatusMessage.textContent = ''; // Bersihkan status saat pindah tab
-    }
-    
-    // --- GENERATOR LINK ---
 
-    function createLink() {
-        const currentSettings = {
-            sheetUrl: appSettings.sheetUrl,
-            appsScriptUrl: appSettings.appsScriptUrl,
-            teacherName: appSettings.teacherName,
-            quizTopic: appSettings.quizTopic,
-            quizDuration: appSettings.quizDuration
-        };
-
-        // Hapus kunci yang kosong agar link tidak terlalu panjang
-        const cleanSettings = Object.keys(currentSettings).reduce((acc, key) => {
-            if (currentSettings[key]) {
-                acc[key] = currentSettings[key];
-            }
-            return acc;
-        }, {});
-
-        const settingsString = JSON.stringify(cleanSettings);
-        const encodedString = btoa(settingsString);
-
-        // Buat link penuh
-        const baseURL = window.location.origin + window.location.pathname;
-        const shareLink = `${baseURL}?config=${encodedString}`;
-        
-        generatedLinkInput.value = shareLink;
-        generatedLinkArea.classList.remove('hidden');
-        settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-green-600';
-        settingsStatusMessage.textContent = 'Link berbagi berhasil dibuat!';
+        document.getElementById(`tab-${tabId}-content`).style.display = 'block';
+        document.getElementById(`tab-${tabId}-btn`).classList.add('active', 'border-blue-600', 'text-blue-600');
+        document.getElementById(`tab-${tabId}-btn`).classList.remove('text-gray-500', 'hover:text-gray-700');
     }
 
-    function copyLink() {
-        generatedLinkInput.select();
-        document.execCommand('copy');
-        settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-green-600';
-        settingsStatusMessage.textContent = 'Link berhasil disalin ke clipboard!';
-        setTimeout(() => settingsStatusMessage.textContent = '', 3000);
+    // --- Quiz Logic ---
+
+    // Placeholder: This should fetch question from Google Sheet
+    function loadQuizData() {
+        if (!currentSettings.sheetUrl) return;
+
+        // In a real scenario, this would involve a fetch request to Apps Script to get the question
+        // For this demo, we use a placeholder question.
+        document.getElementById('question-display').textContent = 'Memuat soal...';
+
+        // Simulating data fetch
+        setTimeout(() => {
+            // Replace with actual data fetching logic
+            quizState.question = {
+                id: 1,
+                text: "Jelaskan dengan detail langkah-langkah untuk membuat teh manis yang enak dan mengapa urutan langkah tersebut penting. (Minimal 3 paragraf)",
+                gradingRubric: [
+                    { criteria: "Kelengkapan dan Keterurutan Langkah", weight: 40 },
+                    { criteria: "Kualitas Bahasa dan Kohesi Teks", weight: 30 },
+                    { criteria: "Ketepatan Detail dan Alasan", weight: 30 }
+                ]
+            };
+            document.getElementById('question-display').textContent = quizState.question.text;
+            document.getElementById('start-quiz-btn').disabled = false;
+        }, 1500);
     }
 
-    // --- KONEKSI GOOGLE (BACKEND PROXY) ---
 
-    async function checkAppsScriptConnection() {
-        const url = appSettings.appsScriptUrl;
-        if (!url) {
-            settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-red-600';
-            settingsStatusMessage.textContent = 'Error: URL Apps Script belum diisi.';
-            return;
-        }
-
-        showLoading('Menguji koneksi Apps Script...');
-        testConnectionBtn.disabled = true;
-
-        try {
-            const spreadsheetId = getSpreadsheetId(appSettings.sheetUrl);
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'testConnection', spreadsheetId: spreadsheetId })
-            });
-
-            const result = await response.json();
-            
-            if (result.success) {
-                settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-green-600';
-                settingsStatusMessage.textContent = 'Koneksi Berhasil! Apps Script (Server Proxy) berfungsi dengan baik.';
-            } else {
-                // Tampilkan pesan error dari Apps Script
-                settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-red-600';
-                settingsStatusMessage.textContent = 'Koneksi Gagal: ' + result.message;
-            }
-        } catch (error) {
-            settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-red-600';
-            settingsStatusMessage.textContent = 'Koneksi Gagal: Gagal terhubung ke Apps Script. Pastikan URL deployment sudah benar dan diizinkan.';
-            console.error(error);
-        } finally {
-            hideLoading();
-            testConnectionBtn.disabled = false;
-        }
-    }
-
-    // --- GENERATOR SOAL AI (PENGGUNAAN PROXY) ---
-    
-    async function generateQuestions() {
-        const prompt = document.getElementById('generator-prompt').value.trim();
-        if (!prompt) {
-            settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-red-600';
-            settingsStatusMessage.textContent = 'Error: Isi Prompt/Perintah untuk AI terlebih dahulu.';
-            return;
-        }
-        if (!appSettings.appsScriptUrl || !appSettings.sheetUrl) {
-            settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-red-600';
-            settingsStatusMessage.textContent = 'Error: Konfigurasi Google Sheet/Apps Script belum lengkap.';
-            return;
-        }
-
-        // Tampilkan Loading
-        generateQuestionsBtn.disabled = true;
-        generateQuestionsText.classList.add('hidden');
-        generateQuestionsSpinner.classList.remove('hidden');
-        settingsStatusMessage.textContent = ''; // Clear status
-
-        try {
-            const spreadsheetId = getSpreadsheetId(appSettings.sheetUrl);
-            const response = await fetch(appSettings.appsScriptUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    action: 'generateQuestions', 
-                    prompt: prompt,
-                    spreadsheetId: spreadsheetId 
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-green-600';
-                settingsStatusMessage.textContent = result.message;
-            } else {
-                settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-red-600';
-                settingsStatusMessage.textContent = 'Gagal Generate Soal: ' + result.message;
-            }
-
-        } catch (error) {
-            settingsStatusMessage.className = 'mt-4 text-sm text-center font-medium text-red-600';
-            settingsStatusMessage.textContent = 'Koneksi Gagal: Gagal mengirim permintaan ke Server Proxy.';
-        } finally {
-            generateQuestionsBtn.disabled = false;
-            generateQuestionsText.classList.remove('hidden');
-            generateQuestionsSpinner.classList.add('hidden');
-        }
-    }
-
-    // --- INTI APLIKASI UJIAN ---
-
-    /** Ambil data soal dari Google Sheet */
-    async function fetchQuestions() {
-        const sheetUrl = appSettings.sheetUrl;
-        
-        if (!sheetUrl) {
-            throw new Error("URL Google Sheet belum dikonfigurasi di Pengaturan Guru.");
-        }
-        
-        // Konversi URL Google Sheet menjadi URL CSV yang dapat diakses publik
-        // Tambahkan timestamp untuk mencegah caching browser
-        const sheetId = getSpreadsheetId(sheetUrl);
-        if (!sheetId) {
-            throw new Error("URL Google Sheet tidak valid. Pastikan formatnya benar.");
-        }
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=0&v=${Date.now()}`;
-        
-        showLoading("Mengambil data soal dari Google Sheet...");
-
-        try {
-            const response = await fetch(csvUrl);
-            if (!response.ok) {
-                // Ini akan menangani error 400/404/500
-                throw new Error("Gagal mengambil data dari Google Sheet. Periksa: 1. URL sudah benar. 2. Sheet sudah di-publish ke web (File > Share > Publish to web). 3. Sheet Soal ada di tab pertama (GID=0).");
-            }
-
-            const csvText = await response.text();
-            
-            // Parsing CSV sederhana
-            // Menggunakan library yang lebih canggih di dunia nyata lebih disarankan, tapi ini untuk demonstrasi
-            const lines = csvText.split('\n').filter(line => line.trim() !== '');
-            if (lines.length < 2) {
-                throw new Error("Data Sheet tidak mencukupi (minimal 1 baris header dan 1 baris soal).");
-            }
-            
-            // Skip header (lines[0])
-            questions = lines.slice(1).map(line => {
-                // Parsing sederhana berdasarkan koma, mengabaikan koma di dalam kutipan
-                const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-                
-                // Hapus tanda kutip dari awal dan akhir
-                const cleanParts = parts.map(p => p.trim().replace(/^"|"$/g, ''));
-
-                // Diasumsikan: Kolom 1 = Soal, Kolom 2 = Kunci Jawaban
-                return {
-                    question: cleanParts[0] || '',
-                    keyAnswer: cleanParts[1] || '',
-                    studentAnswer: '',
-                    score: null,
-                    feedback: ''
-                };
-            }).filter(q => q.question.trim() !== '' && q.keyAnswer.trim() !== '');
-
-            if (questions.length === 0) {
-                 throw new Error("Tidak ada soal valid yang ditemukan. Pastikan Kolom A (Soal) dan Kolom B (Kunci Jawaban) terisi.");
-            }
-            
-            hideLoading();
-            startQuiz();
-
-        } catch (error) {
-            hideLoading();
-            console.error("Fetch Error:", error);
-            showAppStatus(error.message, true);
-        }
-    }
-
-    /** Memulai Ujian */
     function startQuiz() {
         const studentName = document.getElementById('student-name-input').value.trim();
-        const studentClass = document.getElementById('student-class-input').value.trim();
-        const subject = document.getElementById('subject-input').value.trim();
-
-        if (!studentName || !studentClass || !subject) {
-            showAppStatus("Harap isi semua data identitas (Nama, Kelas, Mata Pelajaran) untuk memulai ujian.", true);
-            return;
-        }
+        const studentClass = document.getElementById('student-class-input').value.trim(); // Ambil input kelas
         
-        // Simpan identitas siswa
-        studentIdentity = { studentName, studentClass, subject };
-        
-        // Reset state
-        currentQuestionIndex = 0;
-        studentResults = [];
-
-        // Update UI
-        document.getElementById('total-questions-count').textContent = questions.length;
-        document.getElementById('quiz-subject-info').textContent = `Mata Pelajaran: ${subject} | Materi: ${appSettings.quizTopic || 'Belum Ditentukan'}`;
-
-        studentIdentityScreen.classList.add('hidden');
-        quizScreen.classList.remove('hidden');
-        hideAppStatus();
-        
-        displayQuestion();
-    }
-
-    /** Menampilkan soal saat ini */
-    function displayQuestion() {
-        if (currentQuestionIndex >= questions.length) {
-            showResults();
+        if (!studentName || !studentClass) { // Validasi nama dan kelas
+            showMessage('Nama siswa dan Kelas wajib diisi.', 'error');
             return;
         }
 
-        const q = questions[currentQuestionIndex];
-        
-        // Reset UI
-        document.getElementById('current-question-index').textContent = currentQuestionIndex + 1;
-        questionText.innerHTML = q.question.replace(/\n/g, '<br>'); // Tambahkan break line
-        studentAnswerInput.value = q.studentAnswer || '';
-        feedbackArea.classList.add('hidden');
-        submitAnswerBtn.classList.remove('hidden');
-        studentAnswerInput.disabled = false;
-        
-        // Sembunyikan toolbar jika tidak ada textarea aktif
-        writingToolbar.classList.remove('hidden');
-        submitAnswerBtn.disabled = false;
-    }
-
-    /** Mengirim Jawaban ke Apps Script (Server Proxy) untuk Koreksi */
-    async function submitAnswer() {
-        if (isSubmitting) return;
-
-        const studentAnswer = studentAnswerInput.value.trim();
-        if (!studentAnswer) {
-            alert("Jawaban tidak boleh kosong.");
+        if (!quizState.question) {
+            showMessage('Soal belum dimuat. Periksa Pengaturan dan coba lagi.', 'error');
             return;
         }
 
-        isSubmitting = true;
-        submitAnswerBtn.disabled = true;
-        studentAnswerInput.disabled = true;
-        showLoading("Mengirim ke AI... Mohon tunggu (± 5-15 detik)");
-
-        try {
-            const currentQ = questions[currentQuestionIndex];
-            const spreadsheetId = getSpreadsheetId(appSettings.sheetUrl);
-
-            // Panggil Apps Script (Proxy)
-            const response = await fetch(appSettings.appsScriptUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'gradeAnswer',
-                    question: currentQ.question,
-                    keyAnswer: currentQ.keyAnswer,
-                    studentAnswer: studentAnswer,
-                    spreadsheetId: spreadsheetId // Kirim ID agar skrip bisa memverifikasi
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // Simpan hasil koreksi
-                currentQ.studentAnswer = studentAnswer;
-                currentQ.score = result.score;
-                currentQ.feedback = result.feedback;
-                
-                // Tampilkan Feedback
-                document.getElementById('ai-score').textContent = `Skor Anda: ${result.score}/100`;
-                document.getElementById('ai-feedback-text').innerHTML = result.feedback.replace(/\n/g, '<br>');
-                feedbackArea.classList.remove('hidden');
-                submitAnswerBtn.classList.add('hidden');
-
-                // Siap untuk lanjut
-                nextQuestionBtn.onclick = () => {
-                    currentQuestionIndex++;
-                    displayQuestion();
-                };
-
-            } else {
-                // Tampilkan pesan error jika Apps Script/Gemini gagal
-                alert(`Koreksi Gagal: ${result.message}. Cek log Apps Script Anda.`);
-                studentAnswerInput.disabled = false;
-                submitAnswerBtn.disabled = false;
-            }
-
-        } catch (error) {
-            alert("Error koneksi saat koreksi: Gagal berkomunikasi dengan Apps Script. Pastikan URL benar dan skrip sudah di-deploy.");
-            console.error(error);
-            studentAnswerInput.disabled = false;
-            submitAnswerBtn.disabled = false;
-        } finally {
-            hideLoading();
-            isSubmitting = false;
-        }
-    }
-
-    /** Menampilkan hasil akhir */
-    function showResults() {
-        quizScreen.classList.add('hidden');
-        resultsScreen.classList.remove('hidden');
+        quizState.studentName = studentName;
+        quizState.studentClass = studentClass; // Simpan kelas ke state
+        quizState.status = 'in-progress';
+        quizState.startTime = new Date();
+        document.getElementById('initial-load-area').classList.add('hidden');
+        document.getElementById('question-answer-area').classList.remove('hidden');
+        document.getElementById('student-answer-input').value = '';
+        document.getElementById('student-answer-input').focus();
         
-        // Hitung Skor Rata-rata
-        const totalScore = questions.reduce((sum, q) => sum + (q.score || 0), 0);
-        const averageScore = Math.round(totalScore / questions.length);
-
-        // Update Hasil Identitas
-        document.getElementById('result-student-name').textContent = studentIdentity.studentName;
-        document.getElementById('result-subject').textContent = studentIdentity.subject;
-        document.getElementById('result-class').textContent = studentIdentity.studentClass;
-        document.getElementById('result-total-questions').textContent = questions.length;
-        document.getElementById('final-average-score').textContent = averageScore;
-
-        // Tampilkan Detail Hasil
-        const detailList = document.getElementById('results-detail-list');
-        detailList.innerHTML = '';
-
-        questions.forEach((q, index) => {
-            const detailItem = document.createElement('div');
-            detailItem.className = 'p-4 border border-gray-200 rounded-lg bg-gray-50';
-            detailItem.innerHTML = `
-                <p class="font-bold text-gray-800">Soal #${index + 1}</p>
-                <div class="mt-1 text-sm text-gray-600 max-h-20 overflow-y-auto">${q.question.replace(/\n/g, '<br>')}</div>
-                <p class="mt-2 text-sm font-medium text-green-700">Skor: ${q.score}/100</p>
-                <p class="text-xs text-yellow-800">Umpan Balik AI: ${q.feedback}</p>
-            `;
-            detailList.appendChild(detailItem);
-        });
-
-        // Simpan Hasil ke Spreadsheet secara asinkron
-        saveResultsToSpreadsheet(averageScore);
+        startTimer();
     }
 
-    /** Menyimpan Hasil Akhir ke Apps Script */
-    async function saveResultsToSpreadsheet(averageScore) {
-        if (!appSettings.appsScriptUrl || !appSettings.sheetUrl) return; // Tidak perlu simpan jika setting kosong
+    // Placeholder: This should send data to an LLM and then save results
+    async function submitAnswer(isTimeout = false) {
+        stopTimer();
+        const answer = document.getElementById('student-answer-input').value.trim();
+        if (!answer) {
+            showMessage('Jawaban tidak boleh kosong.', 'error');
+            if (!isTimeout) startTimer(); // Resume timer if not timeout
+            return;
+        }
 
-        const detailResults = questions.map(q => ({
-            question: q.question,
-            studentAnswer: q.studentAnswer,
-            score: q.score,
-            feedback: q.feedback
-        }));
+        if (!currentSettings.appsScriptUrl) {
+            showMessage('URL Apps Script belum diatur. Harap atur di Pengaturan Guru.', 'error');
+            if (!isTimeout) startTimer();
+            return;
+        }
 
-        const dataToSend = {
-            action: 'saveResult',
-            spreadsheetId: getSpreadsheetId(appSettings.sheetUrl),
-            result: {
-                studentName: studentIdentity.studentName,
-                studentClass: studentIdentity.studentClass,
-                subject: studentIdentity.subject,
-                averageScore: averageScore,
-                totalQuestions: questions.length,
-                detail: detailResults
+        // Show loading state
+        const submitBtn = document.getElementById('submit-answer-btn');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Menilai Jawaban... Harap Tunggu.';
+        submitBtn.disabled = true;
+
+        const systemPrompt = `Anda adalah seorang asisten penilaian akademik yang profesional dan ahli dalam menilai jawaban esai. Tugas Anda adalah memberikan penilaian yang rinci, spesifik, dan konstruktif.
+            Instruksi:
+            1. Nilai jawaban siswa ('${answer}') berdasarkan pertanyaan ('${quizState.question.text}') dan rubrik penilaian berikut:
+            ${quizState.question.gradingRubric.map(r => `- ${r.criteria} (${r.weight}%)`).join('\n')}
+            2. Berikan skor (angka 0-100) untuk setiap kriteria.
+            3. Berikan *feedback* yang spesifik dan *actionable* (kurang dari 100 kata per kriteria).
+            4. Hitung skor rata-rata tertimbang berdasarkan bobot kriteria.
+            5. Output harus dalam format JSON yang spesifik.
+
+            Struktur Output JSON yang HARUS Anda hasilkan:
+            [
+              {
+                "kriteria": "[Kriteria 1 dari rubrik]",
+                "bobot": [Bobot %],
+                "skor": [Skor 0-100],
+                "feedback": "[Ulasan singkat dan spesifik]"
+              },
+              {
+                "kriteria": "[Kriteria 2 dari rubrik]",
+                "bobot": [Bobot %],
+                "skor": [Skor 0-100],
+                "feedback": "[Ulasan singkat dan spesifik]"
+              }
+              // ... kriteria lainnya
+            ]
+        `;
+
+        const payload = {
+            contents: [{ parts: [{ text: "Lakukan penilaian esai berdasarkan prompt sistem." }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "ARRAY",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            "kriteria": { "type": "STRING" },
+                            "bobot": { "type": "NUMBER" },
+                            "skor": { "type": "NUMBER" },
+                            "feedback": { "type": "STRING" }
+                        },
+                        "propertyOrdering": ["kriteria", "bobot", "skor", "feedback"]
+                    }
+                }
             }
         };
 
+        let rawResult;
         try {
-            await fetch(appSettings.appsScriptUrl, {
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            rawResult = await response.json();
+
+            const jsonText = rawResult.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!jsonText) throw new Error("Gagal mendapatkan respons JSON dari AI.");
+            
+            const results = JSON.parse(jsonText);
+            
+            if (!Array.isArray(results) || results.length === 0) throw new Error("Struktur JSON tidak valid.");
+
+            // Calculate weighted average
+            let totalWeightedScore = 0;
+            let totalWeight = 0;
+            results.forEach(item => {
+                totalWeightedScore += item.skor * (item.bobot / 100);
+                totalWeight += (item.bobot / 100);
+            });
+            const averageScore = Math.round((totalWeightedScore / totalWeight) * 100) / 100; // Round to 2 decimal places
+
+            // Display results
+            displayResults(results, averageScore, answer);
+
+            // Save to Google Sheet
+            await saveResultsToSheet(results, averageScore, answer);
+
+        } catch (error) {
+            console.error("Penilaian Gagal:", error);
+            showMessage(`Penilaian gagal: ${error.message}. Cek koneksi atau coba lagi.`, 'error');
+            // Re-enable timer and button on failure
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+            startTimer(); 
+            return;
+        } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+    
+    // Function to display results on the page
+    function displayResults(results, averageScore, answer) {
+        document.getElementById('question-answer-area').classList.add('hidden');
+        document.getElementById('result-area').classList.remove('hidden');
+        document.getElementById('result-student-name').textContent = quizState.studentName;
+        document.getElementById('result-student-class').textContent = quizState.studentClass; // Tampilkan Kelas
+        document.getElementById('result-average-score').textContent = averageScore;
+
+        const detailsArea = document.getElementById('result-details');
+        detailsArea.innerHTML = `
+            <div class="mb-6 p-4 border rounded-lg bg-yellow-50">
+                <h4 class="font-bold text-gray-800 mb-2">Jawaban Siswa</h4>
+                <div class="prose prose-custom text-sm text-gray-700 whitespace-pre-wrap">${answer}</div>
+            </div>
+            <h3 class="text-xl font-bold mb-3 text-gray-800">Detail Penilaian per Kriteria</h3>
+        `;
+
+        results.forEach(item => {
+            detailsArea.innerHTML += `
+                <div class="p-4 border rounded-lg shadow-sm bg-white">
+                    <h4 class="font-semibold text-lg text-gray-700">${item.kriteria} (${item.bobot}%)</h4>
+                    <p class="text-2xl font-bold text-green-600 my-1">Skor: ${item.skor}/100</p>
+                    <p class="text-sm text-gray-600 mt-2">Ulasan Penilai:</p>
+                    <p class="text-gray-800">${item.feedback}</p>
+                </div>
+            `;
+        });
+        
+        quizState.status = 'finished';
+    }
+
+    function retakeQuiz() {
+        // Reset state
+        quizState.status = 'initial';
+        quizState.studentName = '';
+        quizState.studentClass = ''; // Reset kelas
+        quizState.startTime = null;
+        quizState.elapsedTime = 0;
+
+        // Reset UI
+        document.getElementById('result-area').classList.add('hidden');
+        document.getElementById('initial-load-area').classList.remove('hidden');
+        document.getElementById('student-name-input').value = '';
+        document.getElementById('student-class-input').value = ''; // Reset input kelas
+        document.getElementById('student-name-input').focus();
+        document.getElementById('question-display').textContent = 'Memuat soal...';
+
+        // Reload data
+        loadQuizData();
+    }
+    
+    async function saveResultsToSheet(results, averageScore, answer) {
+        const timestamp = new Date().toISOString();
+        const details = JSON.stringify({
+            question: quizState.question.text,
+            answer: answer,
+            assessment: results
+        });
+
+        const dataToSend = {
+            timestamp: timestamp,
+            studentName: quizState.studentName,
+            studentClass: quizState.studentClass, // Kirim data kelas
+            subject: currentSettings.examSubject || 'N/A', 
+            averageScore: averageScore,
+            details: details
+        };
+
+        try {
+            const url = currentSettings.appsScriptUrl;
+            if (!url) {
+                showMessage('URL Apps Script tidak ditemukan. Hasil tidak tersimpan online.', 'error');
+                return;
+            }
+
+            // Using fetch with 'no-cors' mode is necessary for Apps Script POST requests
+            // We cannot read the response, only confirm success if no network error
+            await fetch(url, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify(dataToSend)
             });
-            // console.log("Hasil berhasil disimpan di Google Sheet.");
+
+            // Since we can't read the response in 'no-cors', assume success if no exception
+            showMessage('Hasil ujian berhasil dikirim ke Google Sheet!', 'success');
+
         } catch (error) {
-            console.error("Gagal menyimpan hasil ke Spreadsheet:", error);
+            console.error('Error saving to Google Sheet:', error);
+            showMessage('Gagal mengirim hasil ke Google Sheet. Cek URL Apps Script Anda.', 'error');
         }
     }
 
-    /** Unduh Hasil sebagai PDF */
+    // --- PDF Generation ---
+
     function downloadResultsAsPDF() {
-        showLoading("Mempersiapkan PDF...");
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const margin = 20;
+        let y = margin;
+        const pageHeight = doc.internal.pageSize.height;
         
-        const doc = new window.jspdf.jsPDF();
-        let y = 15;
-        const margin = 15;
-        const pageWidth = doc.internal.pageSize.width;
-
-        // Judul
-        doc.setFont('Helvetica', 'bold');
-        doc.setFontSize(18);
-        doc.setTextColor(30, 58, 138); // Indigo 800
-        doc.text("LAPORAN HASIL UJIAN ESAI AI", pageWidth / 2, y, { align: 'center' });
-        y += 8;
-
-        // Data Siswa & Ujian
-        doc.setFontSize(10);
-        doc.setFont('Helvetica', 'normal');
-        doc.setTextColor(75, 85, 99); // Gray 600
-        const identityData = [
-            ["Nama Siswa", studentIdentity.studentName],
-            ["Kelas", studentIdentity.studentClass],
-            ["Mata Pelajaran", studentIdentity.subject],
-            ["Materi Ujian", appSettings.quizTopic || 'N/A'],
-            ["Durasi Ujian", (appSettings.quizDuration ? appSettings.quizDuration + ' Menit' : 'N/A')],
-            ["Tanggal Ujian", new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })]
-        ];
-        
-        identityData.forEach(([label, value]) => {
-            doc.text(`${label}:`, margin, y);
-            doc.setFont('Helvetica', 'bold');
-            doc.text(value, margin + 40, y);
-            doc.setFont('Helvetica', 'normal');
-            y += 5;
-        });
-
-        // Skor Rata-rata Akhir
-        y += 5;
-        doc.setFontSize(12);
-        doc.setFont('Helvetica', 'bold');
-        doc.setTextColor(5, 150, 105); // Green 600
-        const totalScore = questions.reduce((sum, q) => sum + (q.score || 0), 0);
-        const averageScore = Math.round(totalScore / questions.length);
-        doc.text(`SKOR RATA-RATA AKHIR: ${averageScore}/100`, margin, y);
-        y += 8;
-
-        // Rincian Soal
         doc.setFontSize(14);
-        doc.setFont('Helvetica', 'bold');
-        doc.setTextColor(30, 58, 138); // Indigo 800
-        doc.text("EVALUASI DAN PEMBAHASAN", margin, y);
+        doc.setFont('helvetica', 'bold');
+        doc.text("LAPORAN HASIL PENILAIAN UJIAN", 105, y, null, null, "center");
+        y += 7;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Mata Pelajaran: ${currentSettings.examSubject || 'N/A'}`, margin, y);
+        y += 5;
+        doc.text(`Materi Ujian: ${currentSettings.examMaterial || 'N/A'}`, margin, y);
+        y += 5;
+        doc.text(`Nama Siswa: ${quizState.studentName}`, margin, y);
+        y += 5;
+        doc.text(`Kelas: ${quizState.studentClass}`, margin, y); // Tambahkan Kelas di PDF
+        y += 5;
+        doc.text(`Skor Rata-rata: ${document.getElementById('result-average-score').textContent}`, margin, y);
+        y += 10;
+        
+        doc.line(margin, y, 210 - margin, y);
         y += 5;
 
-        // Loop Soal Detail
-        questions.forEach((q, index) => {
-            y += 5;
-            doc.setFontSize(10);
-            doc.setFont('Helvetica', 'bold');
-            doc.setTextColor(0, 0, 0);
-            
-            // Cek apakah perlu halaman baru
-            if (y > doc.internal.pageSize.height - 60) {
+        // Soal Ujian
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Soal Ujian:", margin, y);
+        y += 6;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        
+        // Split text for question
+        const questionText = document.getElementById('question-display').textContent;
+        const questionLines = doc.splitTextToSize(questionText, 210 - 2 * margin);
+        questionLines.forEach(line => {
+            if (y > pageHeight - margin) {
                 doc.addPage();
                 y = margin;
             }
+            doc.text(line, margin, y);
+            y += 5;
+        });
+        y += 5;
+        
+        // Jawaban Siswa
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Jawaban Siswa:", margin, y);
+        y += 6;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        
+        // Split text for answer
+        const answerText = document.querySelector('#result-details > div:first-child .prose-custom').textContent;
+        const answerLines = doc.splitTextToSize(answerText, 210 - 2 * margin);
+        answerLines.forEach(line => {
+            if (y > pageHeight - margin) {
+                doc.addPage();
+                y = margin;
+            }
+            doc.text(line, margin, y);
+            y += 5;
+        });
+        y += 5;
 
-            doc.text(`SOAL #${index + 1}:`, margin, y);
-            y += 4;
-            doc.setFont('Helvetica', 'normal');
-            doc.setTextColor(75, 85, 99);
-            
-            // Soal Text
-            const questionLines = doc.splitTextToSize(q.question, pageWidth - 2 * margin);
-            doc.text(questionLines, margin, y);
-            y += (questionLines.length * 4);
-            
-            // Jawaban Siswa
-            y += 3;
-            doc.setFont('Helvetica', 'bold');
-            doc.setTextColor(37, 99, 235);
-            doc.text("Jawaban Siswa:", margin, y);
-            y += 4;
-            doc.setFont('Helvetica', 'normal');
-            doc.setTextColor(75, 85, 99);
-            const studentAnswerLines = doc.splitTextToSize(q.studentAnswer || 'Tidak ada jawaban.', pageWidth - 2 * margin);
-            doc.text(studentAnswerLines, margin, y);
-            y += (studentAnswerLines.length * 4);
+        // Detail Penilaian
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Detail Penilaian per Kriteria:", margin, y);
+        y += 7;
 
-            // Skor & Feedback
-            y += 3;
-            doc.setFont('Helvetica', 'bold');
-            doc.setTextColor(5, 150, 105);
-            doc.text(`Skor AI: ${q.score || 0}/100`, margin, y);
-            y += 4;
-
-            doc.setFont('Helvetica', 'bold');
-            doc.setTextColor(100, 100, 0); // Yellowish
-            doc.text("Umpan Balik AI:", margin, y);
-            y += 4;
-            doc.setFont('Helvetica', 'normal');
-            doc.setTextColor(75, 85, 99);
-            const feedbackLines = doc.splitTextToSize(q.feedback || 'Tidak ada umpan balik.', pageWidth - 2 * margin);
-            doc.text(feedbackLines, margin, y);
-            y += (feedbackLines.length * 4);
+        // Loop through result details
+        const resultItems = document.querySelectorAll('#result-details > div:not(:first-child):not(h3)');
+        resultItems.forEach(item => {
+            if (y > pageHeight - margin - 30) { // Check space for a block
+                doc.addPage();
+                y = margin;
+            }
             
-            // Garis pemisah antar soal
-            doc.setDrawColor(200);
-            doc.line(margin, y, pageWidth - margin, y);
+            const title = item.querySelector('h4').textContent;
+            const score = item.querySelector('.text-2xl').textContent;
+            const feedback = item.querySelector('.text-gray-800').textContent;
+
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title, margin, y);
+            y += 5;
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(score, margin, y);
+            y += 5;
+
+            doc.setFont('helvetica', 'normal');
+            doc.text("Ulasan Penilai:", margin, y);
+            y += 5;
+
+            // Split text for feedback
+            const feedbackLines = doc.splitTextToSize(feedback, 210 - 2 * margin);
+            feedbackLines.forEach(line => {
+                if (y > pageHeight - margin) {
+                    doc.addPage();
+                    y = margin;
+                }
+                doc.text(line, margin, y);
+                y += 5;
+            });
+            y += 5;
         });
 
-        // Tanda Tangan Guru (Di Akhir Dokumen)
-        // Pastikan ada ruang di halaman terakhir, jika tidak tambahkan halaman
-        if (y > doc.internal.pageSize.height - 40) {
-            doc.addPage();
-            y = margin;
+        // Tanda Tangan Guru
+        if (currentSettings.teacherName) {
+            if (y > pageHeight - margin - 30) {
+                doc.addPage();
+                y = margin;
+            }
+            doc.text("Guru Mata Pelajaran,", 210 - margin - 50, y, null, null, "center");
+            y += 20;
+            doc.setFont('helvetica', 'bold');
+            doc.text(currentSettings.teacherName, 210 - margin - 50, y, null, null, "center");
         }
 
-        y = doc.internal.pageSize.height - 40; // Posisikan 40mm dari bawah
-        doc.setFont('Helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-
-        // Kolom kiri (Tanggal)
-        doc.text("Mengetahui,", margin, y);
-        doc.text("Tanggal: " + new Date().toLocaleDateString('id-ID'), margin, y + 5);
-        doc.text("Guru Mata Pelajaran,", margin, y + 15);
-        
-        // Kolom kanan (Nama Guru)
-        const teacherName = appSettings.teacherName || '_________________________';
-        doc.text("Hormat kami,", pageWidth - margin - 40, y); // Sesuaikan posisi x
-        doc.text("Tanda Tangan Siswa", pageWidth - margin - 40, y + 5); // Tanda Tangan Siswa
-        doc.text(teacherName, pageWidth - margin - 40, y + 15); // Nama Guru
-        doc.line(pageWidth - margin - 40, y + 15, pageWidth - margin, y + 15); // Garis bawah nama guru
-
-        // Download
-        const filename = `Hasil_Esai_${studentIdentity.studentName}_${studentIdentity.subject}_${new Date().getTime()}.pdf`;
-        doc.save(filename);
-        
-        hideLoading();
+        doc.save(`Hasil_Ujian_${quizState.studentName}_${quizState.studentClass}.pdf`);
     }
 
-    /** Mengulang Ujian */
-    function retakeQuiz() {
-        // Reset penuh state dan UI
-        currentQuestionIndex = 0;
-        questions = [];
-        studentResults = [];
-        studentIdentity = {};
-
-        resultsScreen.classList.add('hidden');
-        studentIdentityScreen.classList.remove('hidden');
-
-        // Bersihkan input identitas
-        document.getElementById('student-name-input').value = '';
-        document.getElementById('student-class-input').value = '';
-        document.getElementById('subject-input').value = '';
-        hideAppStatus();
+    // --- Generator Functions (Placeholders) ---
+    function generateQuestions() {
+        showMessage('Fungsi Generate Soal belum diimplementasikan.', 'info');
     }
-
-    // --- EVENT LISTENERS ---
     
+    function createLink() {
+        showMessage('Fungsi Generator Link belum diimplementasikan.', 'info');
+        const linkOutput = document.getElementById('exam-link-output');
+        const tempLink = "https://example.com/ujian-esai-unik-12345";
+        linkOutput.value = tempLink;
+        document.getElementById('copy-link-btn').disabled = false;
+    }
+
+    function copyLink() {
+        const linkOutput = document.getElementById('exam-link-output');
+        linkOutput.select();
+        linkOutput.setSelectionRange(0, 99999); // For mobile devices
+        
+        try {
+            // Use fallback method for clipboard copy in iFrame
+            document.execCommand('copy');
+            showMessage('Link berhasil disalin!', 'success');
+        } catch (err) {
+            showMessage('Gagal menyalin link. Silakan salin manual.', 'error');
+        }
+    }
+
+
+    // --- Event Listeners and Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Init Button Events
-        document.getElementById('start-quiz-btn').addEventListener('click', () => {
-             // Sebelum mulai, pastikan konfigurasi minimum ada
-            if (!appSettings.sheetUrl || !appSettings.appsScriptUrl) {
-                showAppStatus("Harap lengkapi URL Google Sheet dan Apps Script di Pengaturan Guru (⚙️) sebelum memulai ujian.", true);
-                return;
-            }
-            // Lanjutkan ke fetchQuestions (yang akan memanggil startQuiz jika berhasil)
-            fetchQuestions();
-        });
+        const studentNameInput = document.getElementById('student-name-input');
+        const studentClassInput = document.getElementById('student-class-input'); // Ambil input kelas baru
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        const submitAnswerBtn = document.getElementById('submit-answer-btn');
+        const retakeQuizBtn = document.getElementById('retake-quiz-btn');
+        const downloadPdfBtn = document.getElementById('download-pdf-btn');
+
+        // Settings Buttons
+        const teacherSettingsBtn = document.getElementById('teacher-settings-btn');
+        const settingsBackdrop = document.getElementById('settings-backdrop');
+        const closeSettingsBtn = document.getElementById('close-settings-btn');
+        const closeSettingsBtnTop = document.getElementById('close-settings-btn-top');
+        const submitPinBtn = document.getElementById('submit-pin-btn');
+        const saveSettingsBtn = document.getElementById('save-settings-btn'); // Updated ID from user input
+
+        // Tab Navigation
+        const tabConfigBtn = document.getElementById('tab-config-btn');
+        const tabGeneratorBtn = document.getElementById('tab-generator-btn');
+        const tabLinkGenBtn = document.getElementById('tab-link-gen-btn');
         
-        document.getElementById('retake-quiz-btn').addEventListener('click', retakeQuiz);
-        document.getElementById('download-pdf-btn').addEventListener('click', downloadResultsAsPDF);
+        // Generator Buttons
+        const generateQuestionsBtn = document.getElementById('generate-questions-btn');
+        const createLinkBtn = document.getElementById('create-link-btn');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+
+        // Toolbar
+        const writingToolbar = document.getElementById('writing-toolbar');
+
+        // Listener untuk validasi input Nama dan Kelas
+        function checkInputs() {
+            const isNameFilled = studentNameInput.value.trim() !== '';
+            const isClassFilled = studentClassInput.value.trim() !== '';
+            const isSettingsReady = currentSettings.sheetUrl && currentSettings.appsScriptUrl && quizState.question;
+            startQuizBtn.disabled = !(isNameFilled && isClassFilled && isSettingsReady);
+        }
+
+        // Listeners for Quiz Flow
+        studentNameInput.addEventListener('input', checkInputs);
+        studentClassInput.addEventListener('input', checkInputs); // Tambahkan listener untuk input kelas
         
-        // Pengaturan Guru
+        startQuizBtn.addEventListener('click', startQuiz);
+        submitAnswerBtn.addEventListener('click', () => submitAnswer(false));
+        retakeQuizBtn.addEventListener('click', retakeQuiz);
+        downloadPdfBtn.addEventListener('click', downloadResultsAsPDF);
+        
+        // Listeners for Settings Modal
         teacherSettingsBtn.addEventListener('click', openSettingsModal);
         settingsBackdrop.addEventListener('click', closeSettingsModal);
         closeSettingsBtn.addEventListener('click', closeSettingsModal);
-        document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
-        document.getElementById('test-connection-btn').addEventListener('click', checkAppsScriptConnection);
+        closeSettingsBtnTop.addEventListener('click', closeSettingsModal);
+        submitPinBtn.addEventListener('click', checkPin);
+        saveSettingsBtn.addEventListener('click', saveSettings); // Hooked up the save function
 
-        // Navigasi Tab
-        document.getElementById('tab-config-btn').addEventListener('click', () => switchTab('config'));
-        document.getElementById('tab-generator-btn').addEventListener('click', () => switchTab('generator'));
-        document.getElementById('tab-link-gen-btn').addEventListener('click', () => switchTab('link-gen'));
+        // Listeners for Tab Navigation
+        tabConfigBtn.addEventListener('click', () => switchTab('config'));
+        tabGeneratorBtn.addEventListener('click', () => switchTab('generator'));
+        tabLinkGenBtn.addEventListener('click', () => switchTab('link-gen'));
         
-        // Generator Soal
-        document.getElementById('generate-questions-btn').addEventListener('click', generateQuestions);
-        
-        // Generator Link
-        document.getElementById('create-link-btn').addEventListener('click', createLink);
-        document.getElementById('copy-link-btn').addEventListener('click', copyLink);
+        // Listeners for Generator (Placeholders)
+        generateQuestionsBtn.addEventListener('click', generateQuestions);
+        createLinkBtn.addEventListener('click', createLink);
+        copyLinkBtn.addEventListener('click', copyLink);
 
-        // Toolbar (Delegate event listener)
+        // Listeners for Toolbar
         writingToolbar.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON' && e.target.dataset.char) {
-                insertAtCursor(studentAnswerInput, e.target.dataset.char);
+                const textarea = document.getElementById('student-answer-input');
+                insertAtCursor(textarea, e.target.dataset.char);
             }
         });
 
-        // Event listener Koreksi
-        submitAnswerBtn.addEventListener('click', submitAnswer);
-        nextQuestionBtn.addEventListener('click', () => {
-            currentQuestionIndex++;
-            displayQuestion();
-        });
-
-        // Muat pengaturan saat aplikasi dimulai
+        // Initialization
         loadSettings();
+        loadQuizData(); // Attempt to load question data based on settings
     });
 </script>
 </body>
